@@ -78,7 +78,10 @@ for repo in "${repos[@]}"; do
 
   # Shell: scan shell and Bash scripts with ShellCheck.
   if find "$target" -type f \( -name '*.sh' -o -name '*.bash' \) -print -quit | grep -q .; then
-    run shellcheck shellcheck $(find "$target" -type f \( -name '*.sh' -o -name '*.bash' \))
+    mapfile -d '' -t shell_files < <(
+      find "$target" -type f \( -name '*.sh' -o -name '*.bash' \) -print0
+    )
+    run shellcheck shellcheck "${shell_files[@]}"
   fi
 
   # Python: run organization Semgrep rules and Bandit analysis.
@@ -102,7 +105,10 @@ for repo in "${repos[@]}"; do
     if grep -RInE '^[[:space:]]*FROM[[:space:]]+[^[:space:]]+:latest([[:space:]]|$)' "$target" --include='Dockerfile*' >/dev/null; then
       status=1; errors+=("image-tag|high|Dockerfile uses the mutable latest image tag")
     fi
-    run hadolint hadolint $(find "$target" -type f -iname 'dockerfile*')
+    mapfile -d '' -t dockerfiles < <(
+      find "$target" -type f -iname 'dockerfile*' -print0
+    )
+    run hadolint hadolint "${dockerfiles[@]}"
     run trivy-docker trivy config "$target"
     run opa-docker conftest test "$target" --policy "$GITHUB_WORKSPACE/opa/docker"
   fi

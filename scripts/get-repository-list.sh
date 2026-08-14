@@ -35,7 +35,7 @@ mkdir -p "$(dirname "$INVENTORY_FILE")"
   echo 'repositories:'
   while IFS= read -r repo; do
     [[ -z "$repo" ]] && continue
-    if ! grep -Rqs --include='*.yaml' --include='*.yml' "^[[:space:]]*name:[[:space:]]*$repo[[:space:]]*$" repository 2>/dev/null; then
+    if ! grep -Rqs --include='*.yaml' --include='*.yml' "^[[:space:]]*name:[[:space:]]*${repo}[[:space:]]*$" repository 2>/dev/null; then
       echo "  - name: $repo"
       echo '    project: TODO'
       echo '    point_of_contact_1: TODO'

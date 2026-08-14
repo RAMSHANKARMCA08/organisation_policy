@@ -93,6 +93,7 @@ def main() -> int:
     parser.add_argument("--reports", type=Path, default=Path("scan-reports"))
     parser.add_argument("--output", type=Path, default=Path("consolidated-reports"))
     args = parser.parse_args()
+    args.reports.mkdir(parents=True, exist_ok=True)
     args.output.mkdir(parents=True, exist_ok=True)
     findings = read_reports(args.reports)
     active, expired, pending = load(Path("."))

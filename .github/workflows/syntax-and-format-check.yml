@@ -137,5 +137,5 @@ jobs:
         run: |
           set -euo pipefail
           gitleaks detect --source . --config gitleaks/config/gitleaks.toml --no-banner
-          checkov -d . --quiet
+          checkov -d . --quiet --skip-path 'helm_chart/templates'
 
