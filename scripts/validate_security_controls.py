@@ -42,7 +42,11 @@ if SCHEMA_PATH.exists():
 
 def fields(path: Path) -> dict:
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    return data if isinstance(data, dict) else {}
+    if not isinstance(data, dict):
+        return {}
+    if isinstance(data.get("valid_till"), date):
+        data["valid_till"] = data["valid_till"].isoformat()
+    return data
 
 
 def validate_exceptions(root: Path) -> list[str]:

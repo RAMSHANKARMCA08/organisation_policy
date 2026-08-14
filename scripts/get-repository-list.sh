@@ -26,7 +26,7 @@ gh repo list "$GITHUB_ORG" --limit 1000 --json name --jq '.[].name' | sort -u > 
 find repository -maxdepth 1 -type f \( -name '*.yaml' -o -name '*.yml' \) \
   ! -name 'discovered-repositories.yaml' -print0 |
   xargs -0 -r grep -hE '^[[:space:]]*name:[[:space:]]*' |
-  sed -E 's/^[[:space:]]*name:[[:space:]]*["'"']?([^"'"'[:space:]]+)["'"']?[[:space:]]*$/\1/' |
+  awk -F: '{ value=$2; gsub(/^[[:space:]"\047]+|[[:space:]"\047]+$/, "", value); print value }' |
   sort -u > "$tmp_configured"
 
 while IFS= read -r repo; do
