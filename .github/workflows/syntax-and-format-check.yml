@@ -14,13 +14,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout commit
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Load approved tool versions
         run: grep -E '^[A-Za-z_][A-Za-z0-9_]*=.*$' config/tool-versions.env >> "$GITHUB_ENV"
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
@@ -84,9 +84,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mapfile -t files < <(find . -type f \( -name '*.yml' -o -name '*.yaml' \) -not -path './.git/*')
+          # Helm templates contain Go-template expressions and must be validated
+          # after rendering rather than parsed as standalone YAML.
+          mapfile -t files < <(find . -type f \( -name '*.yml' -o -name '*.yaml' \) \
+            -not -path './.git/*' \
+            -not -path './helm_chart/templates/*')
           if ((${#files[@]})); then
-            yamllint -d relaxed "${files[@]}"
+            yamllint -c .yamllint "${files[@]}"
           else
             echo 'No YAML files detected.'
           fi

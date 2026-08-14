@@ -50,7 +50,6 @@ stages:
               PathtoPublish: '$(Build.ArtifactStagingDirectory)/scanner-bundle'
               ArtifactName: 'devsecops-scanner-bundle'
               publishLocation: 'Container'
-            displayName: Install Trivy, Semgrep, Python tools, and ShellCheck
 
   - stage: RunScanners
     displayName: Run security scans

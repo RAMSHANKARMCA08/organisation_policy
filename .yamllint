@@ -1,0 +1,10 @@
+extends: relaxed
+
+rules:
+  # Existing policy and CI definitions intentionally contain long commands and
+  # descriptions; line wrapping can change command or scanner semantics.
+  line-length: disable
+  # Accept legacy line endings and trailing blank lines while continuing to
+  # enforce YAML syntax and duplicate-key checks.
+  new-lines: disable
+  empty-lines: disable

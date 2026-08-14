@@ -10,16 +10,19 @@ INVENTORY_FILE="${3:-repository/discovered-repositories.yaml}"
 
 command -v gh >/dev/null || { echo "gh is required" >&2; exit 2; }
 
+# sort and comm must use identical byte-wise ordering.
+export LC_ALL=C
+
 tmp_all="$(mktemp)"
 tmp_exceptions="$(mktemp)"
 trap 'rm -f "$tmp_all" "$tmp_exceptions"' EXIT
 
 # Retrieve all organization repositories without printing credentials.
-gh repo list "$GITHUB_ORG" --limit 1000 --json name --jq '.[].name' | sort -f > "$tmp_all"
+gh repo list "$GITHUB_ORG" --limit 1000 --json name --jq '.[].name' | sort -u > "$tmp_all"
 
 # Read approved exclusions, ignoring blank lines and comments.
 if [[ -f "$EXCEPTION_FILE" ]]; then
-  sed -e 's/[[:space:]]*#.*$//' -e '/^[[:space:]]*$/d' "$EXCEPTION_FILE" | sort -fu > "$tmp_exceptions"
+  sed -e 's/[[:space:]]*#.*$//' -e '/^[[:space:]]*$/d' "$EXCEPTION_FILE" | sort -u > "$tmp_exceptions"
 fi
 
 # Exclude only exact repository names and write a reusable artifact.

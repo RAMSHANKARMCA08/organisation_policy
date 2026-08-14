@@ -17,7 +17,7 @@ jobs:
     # if: github.ref == 'refs/heads/master' || github.event_name == 'schedule'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Load approved tool versions
         run: grep -E '^[A-Za-z_][A-Za-z0-9_]*=.*$' config/tool-versions.env >> "$GITHUB_ENV"
@@ -42,7 +42,7 @@ jobs:
     # if: github.ref == 'refs/heads/master' || github.event_name == 'schedule'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Download reusable repository list
         uses: actions/download-artifact@v4
