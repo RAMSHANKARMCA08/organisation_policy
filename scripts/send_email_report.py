@@ -16,6 +16,7 @@ def main() -> int:
     parser.add_argument("--attachment", type=Path, required=True)
     parser.add_argument("--recipient", required=True)
     parser.add_argument("--subject", default="Organization DevSecOps scan report")
+    parser.add_argument("--body-file", type=Path)
     args = parser.parse_args()
 
     username = os.environ.get("GMAIL_USERNAME")
@@ -33,10 +34,13 @@ def main() -> int:
     message["From"] = username
     message["To"] = args.recipient
     message["Subject"] = args.subject
-    message.set_content(
-        "The full organization DevSecOps scan completed successfully. "
-        "The generated scan reports are attached."
-    )
+    body = "The organization DevSecOps scan has completed. Reports are attached."
+    if args.body_file:
+        if not args.body_file.is_file():
+            print(f"Email body file not found: {args.body_file}", file=sys.stderr)
+            return 2
+        body = args.body_file.read_text(encoding="utf-8")
+    message.set_content(body)
     message.add_attachment(
         args.attachment.read_bytes(),
         maintype="application",

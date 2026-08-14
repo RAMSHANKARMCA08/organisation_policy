@@ -1,6 +1,9 @@
 # Repository inventory
 
-Add one YAML file per repository in this folder, with its canonical name, owning project, and two points of contact. `repositories.yaml` is an aggregate index. The scan workflow discovers and clones repositories from the configured GitHub organization; contact fields are metadata and are not credentials.
+Add one YAML file per repository in this folder, with its canonical name, owning
+project, and two points of contact. These files are the scan allow-list: the
+organization workflow scans only listed repositories that are accessible with
+the configured GitHub token. Contact fields are metadata and are not credentials.
 
 Required fields:
 

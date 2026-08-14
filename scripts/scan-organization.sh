@@ -53,13 +53,31 @@ for repo in "${repos[@]}"; do
   resolved="$(realpath -m "$target")"
   case "$resolved" in "$ROOT"/*) ;; *) echo "repository path escapes workspace: $repo" >&2; exit 2 ;; esac
 
-  target="$TMP_ROOT/$repo"
-  gh repo clone "$GITHUB_ORG/$repo" "$target" -- --depth 1
-
   out="$REPORT/$repo"
   mkdir -p "$out"
   status=0
   errors=()
+
+  target="$TMP_ROOT/$repo"
+  if ! gh repo clone "$GITHUB_ORG/$repo" "$target" -- --depth 1 >"$out/clone.log" 2>&1; then
+    printf '{"repository":"%s","status":"1"}\n' "$repo" >"$out/summary.json"
+    {
+      echo "# DevSecOps scan report: $repo"
+      echo
+      echo "- Repository: $repo"
+      echo "- Organization: $GITHUB_ORG"
+      echo "- Status: FAIL"
+      echo "- Priority: high"
+      echo
+      echo "## Findings"
+      echo
+      echo '| Scanner | Priority | Error details |'
+      echo '|---|---|---|'
+      echo "| clone | high | Repository could not be cloned; see clone.log. |"
+    } >"$out/report.md"
+    failures=$((failures + 1))
+    continue
+  fi
 
   # Repository-wide secrets and IaC security scans.
   run gitleaks gitleaks detect --source "$target" --config "$GITHUB_WORKSPACE/gitleaks/config/gitleaks.toml" --report-format json --report-path "$out/gitleaks.json" --no-banner
