@@ -13,24 +13,21 @@ permissions:
 
 jobs:
   Pipeline:
-    name: Install, discover, scan, report, and mail
+    name: Four-stage organization security pipeline
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout commit
+      - name: Prepare / Checkout commit
         uses: actions/checkout@v5
 
-      - name: Set up Python
+      - name: Prepare / Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
-      - name: Install tools and discover repositories in parallel
-        env:
-          GH_TOKEN: ${{ secrets.ORGANIZATION_REPO_TOKEN }}
-          GITHUB_ORG: ${{ vars.ORGANIZATION_NAME }}
+      - name: Stage 1 / Install tools and reporting packages
         run: |
           set -uo pipefail
-          mkdir -p installed-tools install-status repository
+          mkdir -p installed-tools install-status
           tools=(checkov trivy semgrep gitleaks tflint kyverno terrascan)
           printf '%s\n' "${tools[@]}" >tool-names.txt
 
@@ -50,31 +47,42 @@ jobs:
           done
 
           (
-            if bash scripts/get-repository-list.sh \
-              repository-names.txt \
-              repository/exceptions \
-              repository/discovered-repositories.yaml; then
-              echo 'repository_discovery=success' \
-                >repository-discovery-status.txt
+            if python -m pip install --disable-pip-version-check \
+              PyYAML==6.0.2 jsonschema==4.23.0 \
+              2>&1 | tee install-status/reporting.log; then
+              echo 'install_reporting=success' \
+                >install-status/reporting.txt
             else
-              touch repository-names.txt repository/discovered-repositories.yaml
-              echo 'repository_discovery=failure' \
-                >repository-discovery-status.txt
+              echo 'install_reporting=failure' \
+                >install-status/reporting.txt
             fi
           ) &
 
           wait
-          echo 'Installation results:'
           find install-status -type f -name '*.txt' -exec cat {} \; | sort
-          echo
-          echo 'Dynamic repository matrix:'
-          if [[ -s repository-names.txt ]]; then
-            cat repository-names.txt
+
+      - name: Stage 2 / Identify repositories
+        env:
+          GH_TOKEN: ${{ secrets.ORGANIZATION_REPO_TOKEN }}
+          GITHUB_ORG: ${{ vars.ORGANIZATION_NAME }}
+        run: |
+          set +e
+          bash scripts/get-repository-list.sh \
+            repository-names.txt \
+            repository/exceptions \
+            repository/discovered-repositories.yaml
+          discovery_exit=$?
+          set -e
+          if ((discovery_exit == 0)); then
+            echo 'repository_discovery=success' \
+              >repository-discovery-status.txt
           else
-            echo '(none)'
+            touch repository-names.txt repository/discovered-repositories.yaml
+            echo 'repository_discovery=failure' \
+              >repository-discovery-status.txt
           fi
 
-      - name: Scan repository and tool combinations in parallel
+      - name: Stage 3 / Scan repositories in parallel
         env:
           GH_TOKEN: ${{ secrets.ORGANIZATION_REPO_TOKEN }}
           GITHUB_ORG: ${{ vars.ORGANIZATION_NAME }}
@@ -116,74 +124,9 @@ jobs:
             echo 'scan_execution=failure' >scan-execution-status.txt
           fi
 
-      - name: Install reporting dependencies
-        run: |
-          python -m pip install --disable-pip-version-check \
-            PyYAML==6.0.2 jsonschema==4.23.0
-
-      - name: Generate consolidated report
-        run: |
-          set +e
-          python scripts/generate_consolidated_report.py \
-            --reports scan-reports \
-            --output consolidated-reports
-          report_exit=$?
-          set -e
-          if [[ -f consolidated-reports/organization-consolidated.html && \
-                -f consolidated-reports/organization-consolidated.md ]]; then
-            echo 'report_generation=success' \
-              >consolidated-reports/report-status.txt
-          else
-            echo 'report_generation=failure' \
-              >consolidated-reports/report-status.txt
-          fi
-          if ((report_exit == 0)); then
-            echo 'security_gate=success' \
-              >>consolidated-reports/report-status.txt
-          else
-            echo 'security_gate=failure' \
-              >>consolidated-reports/report-status.txt
-          fi
-
-      - name: Record pipeline results
+      - name: Stage 4 / Generate report and send mail
+        id: report-and-mail
         if: always()
-        run: |
-          mkdir -p consolidated-reports install-status scan-reports
-          {
-            echo 'Organization DevSecOps pipeline status'
-            echo
-            find install-status -type f -name '*.txt' -exec cat {} \; | sort
-            if [[ -f repository-discovery-status.txt ]]; then
-              cat repository-discovery-status.txt
-            else
-              echo 'repository_discovery=failure'
-            fi
-            if [[ -f scan-execution-status.txt ]]; then
-              cat scan-execution-status.txt
-            else
-              echo 'scan_execution=failure'
-            fi
-            if [[ -f consolidated-reports/report-status.txt ]]; then
-              cat consolidated-reports/report-status.txt
-            else
-              echo 'report_generation=failure'
-              echo 'security_gate=failure'
-            fi
-          } | tee consolidated-reports/pipeline-status.txt
-
-      - name: Prepare email attachment
-        id: package
-        if: always()
-        continue-on-error: true
-        run: |
-          mkdir -p consolidated-reports scan-reports install-status
-          zip -qr organization-devsecops-reports.zip \
-            consolidated-reports scan-reports install-status repository
-
-      - name: Send consolidated report
-        id: email
-        if: always()
-        continue-on-error: true
         env:
           MAIL_USERNAME: ${{ vars.MAIL_USERNAME }}
           MAIL_APP_PASSWORD: ${{ secrets.MAIL_APP_PASSWORD }}
@@ -193,6 +136,56 @@ jobs:
           SMTP_SECURITY: ${{ vars.SMTP_SECURITY }}
           REPORT_TIMEZONE: ${{ vars.REPORT_TIMEZONE }}
         run: |
+          set +e
+          mkdir -p consolidated-reports scan-reports install-status
+
+          python scripts/generate_consolidated_report.py \
+            --reports scan-reports \
+            --output consolidated-reports
+          report_exit=$?
+          if [[ -f consolidated-reports/organization-consolidated.html && \
+                -f consolidated-reports/organization-consolidated.md ]]; then
+            report_generation=success
+          else
+            report_generation=failure
+          fi
+          if ((report_exit == 0)); then
+            security_gate=success
+          else
+            security_gate=failure
+          fi
+
+          if grep -qs '=failure$' install-status/*.txt; then
+            install_stage=failure
+          else
+            install_stage=success
+          fi
+          discovery_status="$(cat repository-discovery-status.txt \
+            2>/dev/null || echo 'repository_discovery=failure')"
+          scan_status="$(cat scan-execution-status.txt \
+            2>/dev/null || echo 'scan_execution=failure')"
+          {
+            echo 'Organization DevSecOps pipeline status'
+            echo
+            echo "install_stage=$install_stage"
+            find install-status -type f -name '*.txt' -exec cat {} \; | sort
+            echo "$discovery_status"
+            echo "$scan_status"
+            echo "report_generation=$report_generation"
+            echo "security_gate=$security_gate"
+          } | tee consolidated-reports/pipeline-status.txt
+
+          zip -qr organization-devsecops-reports.zip \
+            consolidated-reports scan-reports install-status repository
+          package_exit=$?
+          if ((package_exit == 0)); then
+            package_status=success
+          else
+            package_status=failure
+          fi
+          echo "report_packaging=$package_status" \
+            | tee -a consolidated-reports/pipeline-status.txt
+
           python scripts/send_email_report.py \
             --attachment organization-devsecops-reports.zip \
             --recipient "${{ vars.MAIL_USERNAME }}" \
@@ -200,24 +193,22 @@ jobs:
             --html-file consolidated-reports/organization-consolidated.html \
             --inline-image consolidated-reports/severity-pie.png \
             --inline-image consolidated-reports/repository-pie.png
+          email_exit=$?
+          if ((email_exit == 0)); then
+            email_status=success
+          else
+            email_status=failure
+          fi
+          echo "email_delivery=$email_status" \
+            | tee -a consolidated-reports/pipeline-status.txt
 
-      - name: Final pipeline gate
-        if: always()
-        env:
-          PACKAGE_RESULT: ${{ steps.package.outcome }}
-          EMAIL_RESULT: ${{ steps.email.outcome }}
-        run: |
-          {
-            echo "report_packaging=$PACKAGE_RESULT"
-            echo "email_delivery=$EMAIL_RESULT"
-          } | tee -a consolidated-reports/pipeline-status.txt
           cat consolidated-reports/pipeline-status.txt
           if grep -Eq '=failure$|=cancelled$|=skipped$' \
             consolidated-reports/pipeline-status.txt; then
             exit 1
           fi
 
-      - name: Publish consolidated report
+      - name: Stage 4 / Publish report artifact
         if: always()
         uses: actions/upload-artifact@v7
         with:

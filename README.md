@@ -45,9 +45,9 @@ generated reports are intentionally omitted from the tree.
   quality gate. It validates Python, YAML, and shell files, checks policy IDs,
   exceptions, ownership, and repository metadata, then runs Gitleaks and Checkov.
 - `.github/workflows/scan_all_repo_friday_schedule.yml` is the manually triggered
-  organization scan entry point. It installs the seven security tools while
-  discovering approved repositories in parallel, then runs a parallel
-  tool-by-repository Scan matrix before the combined Report and Mail job.
+  organization scan entry point. One `ubuntu-latest` runner executes four ordered
+  stages: parallel tool/reporting installation, repository identification,
+  parallel repository/tool scanning, and consolidated reporting with email.
   Schedule and commit/PR triggers remain commented out.
 - `scripts/get-repository-list.sh` queries the configured GitHub organization,
   applies entries from `repository/exceptions/`, and produces the repository list and

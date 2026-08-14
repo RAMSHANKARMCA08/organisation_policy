@@ -94,8 +94,10 @@ while IFS= read -r repo; do
   scan_repository "$repo" || failures=$((failures + 1))
 done <"$REPOSITORY_LIST"
 
-printf '{"tool":"%s","failed_repositories":%d}\n' \
-  "$TOOL" "$failures" >"$REPORT_ROOT/${TOOL}-summary.json"
+summary_repository="${repo:-none}"
+printf '{"tool":"%s","repository":"%s","failed_repositories":%d}\n' \
+  "$TOOL" "$summary_repository" "$failures" \
+  >"$REPORT_ROOT/${summary_repository}-${TOOL}-summary.json"
 
 echo "$TOOL scan completed with $failures repository failure(s)."
 # Per-repository status files are consolidated and enforced in ReportAndMail.
