@@ -129,7 +129,7 @@ jobs:
 
           # Kyverno CLI: validate Kubernetes manifests and rendered Helm resources.
           (
-            curl --fail --location --silent --show-error https://github.com/kyverno/kyverno/releases/download/v1.14.4/kyverno-cli-linux-amd64.tar.gz -o kyverno.tar.gz &&
+            curl --fail --location --silent --show-error https://github.com/kyverno/kyverno/releases/download/v1.14.4/kyverno-cli_v1.14.4_linux_x86_64.tar.gz -o kyverno.tar.gz &&
             mkdir -p "$RUNNER_TEMP/kyverno-bin" &&
             tar -xzf kyverno.tar.gz -C "$RUNNER_TEMP/kyverno-bin" kyverno &&
             sudo install "$RUNNER_TEMP/kyverno-bin/kyverno" /usr/local/bin/kyverno

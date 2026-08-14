@@ -70,4 +70,3 @@ echo "Repositories selected for scanning:"
 if [[ -s "$OUTPUT_FILE" ]]; then cat "$OUTPUT_FILE"; else echo '(none)'; fi
 echo
 echo "Missing local metadata entries written to: $INVENTORY_FILE"
-
