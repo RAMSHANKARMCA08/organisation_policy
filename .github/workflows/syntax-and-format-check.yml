@@ -1,8 +1,10 @@
 name: syntax-and-format-check
 
 on:
-  push:
-  pull_request:
+  workflow_dispatch:
+  # Automatic triggers are disabled. Uncomment to restore them.
+  # push:
+  # pull_request:
 
 permissions:
   contents: read

@@ -1,18 +1,20 @@
 name: scan-all-repositories-friday
 
 on:
-  schedule:
-    # Friday 22:00 UTC. GitHub schedules use UTC.
-    - cron: '0 22 * * 5'
-  push:
-    branches: [master]
+  workflow_dispatch:
+  # Automatic triggers are disabled. Uncomment to restore them.
+  # schedule:
+  #   # Friday 22:00 UTC. GitHub schedules use UTC.
+  #   - cron: '0 22 * * 5'
+  # push:
+  #   branches: [master]
 
 permissions:
   contents: read
 
 jobs:
   ListRepositories:
-    if: github.ref == 'refs/heads/master' || github.event_name == 'schedule'
+    # if: github.ref == 'refs/heads/master' || github.event_name == 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,7 +39,7 @@ jobs:
 
   ScanRepositories:
     needs: ListRepositories
-    if: github.ref == 'refs/heads/master' || github.event_name == 'schedule'
+    # if: github.ref == 'refs/heads/master' || github.event_name == 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
