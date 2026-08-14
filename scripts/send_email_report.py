@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Send a generated report archive through Gmail SMTP."""
+"""Send a generated report archive through a configurable SMTP service."""
 
 from __future__ import annotations
 
@@ -24,9 +24,19 @@ def main() -> int:
     username = os.environ.get("GMAIL_USERNAME")
     app_password = os.environ.get("GMAIL_APP_PASSWORD")
     oauth2_token = os.environ.get("SMTP_OAUTH2_TOKEN")
-    smtp_server = os.environ.get("SMTP_SERVER", "smtp.gmail.com").strip()
-    smtp_port_text = os.environ.get("SMTP_PORT", "465").strip()
-    missing = [name for name, value in (("GMAIL_USERNAME", username),) if not value]
+    smtp_server = os.environ.get("SMTP_SERVER")
+    smtp_port_text = os.environ.get("SMTP_PORT")
+    smtp_security = os.environ.get("SMTP_SECURITY")
+    missing = [
+        name
+        for name, value in (
+            ("GMAIL_USERNAME", username),
+            ("SMTP_SERVER", smtp_server),
+            ("SMTP_PORT", smtp_port_text),
+            ("SMTP_SECURITY", smtp_security),
+        )
+        if not value
+    ]
     if missing:
         print(
             f"Missing required environment variable(s): {', '.join(missing)}",
@@ -39,13 +49,20 @@ def main() -> int:
             file=sys.stderr,
         )
         return 2
+    smtp_server = smtp_server.strip()
+    smtp_port_text = smtp_port_text.strip()
+    smtp_security = smtp_security.strip().lower()
+    username = username.strip()
     try:
         smtp_port = int(smtp_port_text)
     except ValueError:
-        print("SMTP_PORT must be 465 or 587", file=sys.stderr)
+        print("SMTP_PORT must be a number", file=sys.stderr)
         return 2
-    if smtp_port not in (465, 587):
-        print("SMTP_PORT must be 465 (SSL/TLS) or 587 (STARTTLS)", file=sys.stderr)
+    if not 1 <= smtp_port <= 65535:
+        print("SMTP_PORT must be between 1 and 65535", file=sys.stderr)
+        return 2
+    if smtp_security not in ("ssl", "starttls"):
+        print("SMTP_SECURITY must be ssl or starttls", file=sys.stderr)
         return 2
     if app_password:
         # Google displays app passwords in groups; remove copied whitespace.
@@ -91,7 +108,7 @@ def main() -> int:
     )
 
     try:
-        if smtp_port == 465:
+        if smtp_security == "ssl":
             with smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=30) as smtp:
                 authenticate(smtp)
                 smtp.send_message(message)
@@ -103,9 +120,10 @@ def main() -> int:
                 authenticate(smtp)
                 smtp.send_message(message)
     except smtplib.SMTPAuthenticationError:
+        auth_method = "OAuth 2.0" if oauth2_token else "App Password"
         print(
-            "The SMTP server rejected the OAuth token or app password. Update "
-            "the configured Actions authentication secret.",
+            f"The SMTP server rejected {auth_method} authentication for "
+            f"{username}. Update the corresponding Actions secret.",
             file=sys.stderr,
         )
         return 3

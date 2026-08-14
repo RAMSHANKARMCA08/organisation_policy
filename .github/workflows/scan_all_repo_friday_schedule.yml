@@ -220,8 +220,9 @@ jobs:
           GMAIL_USERNAME: ${{ vars.GMAIL_USERNAME }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           SMTP_OAUTH2_TOKEN: ${{ secrets.SMTP_OAUTH2_TOKEN }}
-          SMTP_SERVER: ${{ vars.SMTP_SERVER || 'smtp.gmail.com' }}
-          SMTP_PORT: ${{ vars.SMTP_PORT || '465' }}
+          SMTP_SERVER: ${{ vars.SMTP_SERVER }}
+          SMTP_PORT: ${{ vars.SMTP_PORT }}
+          SMTP_SECURITY: ${{ vars.SMTP_SECURITY }}
         run: |
           python scripts/send_email_report.py \
             --attachment organization-devsecops-reports.zip \

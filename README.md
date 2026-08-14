@@ -78,9 +78,8 @@ generated reports are intentionally omitted from the tree.
   `GMAIL_USERNAME` Actions variable as both sender and recipient, and reads the
   authentication from Actions secrets. `SMTP_OAUTH2_TOKEN` is preferred when
   configured; `GMAIL_APP_PASSWORD` is the fallback for SMTP clients without
-  OAuth. `SMTP_SERVER` and `SMTP_PORT` Actions variables configure delivery;
-  defaults are `smtp.gmail.com` and `465`. Port `465` uses SSL/TLS and `587`
-  uses STARTTLS.
+  OAuth. The required `SMTP_SERVER`, `SMTP_PORT`, and `SMTP_SECURITY` Actions
+  variables configure delivery. Set `SMTP_SECURITY` to `ssl` or `starttls`.
 - `repository/classification.schema.json` defines repository inventory fields,
   while the other YAML files in `repository/` record repository ownership and
   security classification used by governance checks.
