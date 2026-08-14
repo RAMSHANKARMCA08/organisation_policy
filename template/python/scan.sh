@@ -16,13 +16,8 @@ if find "$WORK/repository" -maxdepth 2 -type f -name 'requirements*.txt' -print 
   pip-audit -r "$(find "$WORK/repository" -maxdepth 2 -type f -name 'requirements*.txt' -print -quit)" >"$OUTPUT/pip-audit.txt" 2>&1 || true
 fi
 
-
-
-
 # Gitleaks: scan repository content for secrets.
 gitleaks detect --source "$WORK/repository" --config "$PWD/gitleaks/config/gitleaks.toml" --no-banner
 
 # Checkov: scan Terraform, Kubernetes, Helm, Docker, and cloud IaC.
 checkov -d "$WORK/repository" --output json --output-file-path "$OUTPUT/checkov.json"
-
-

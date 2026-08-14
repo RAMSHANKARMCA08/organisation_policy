@@ -13,12 +13,19 @@ mkdir -p "$ROOT" "$REPORT"
 ROOT="$(realpath -m "$ROOT")"
 REPORT="$(realpath -m "$REPORT")"
 WORKSPACE_ROOT="$(realpath -m "${GITHUB_WORKSPACE:-$(pwd)}")"
-case "$ROOT" in "$WORKSPACE_ROOT"/*) ;; *) echo "repository workspace must remain inside checkout" >&2; exit 2 ;; esac
+case "$ROOT" in "$WORKSPACE_ROOT"/*) ;; *)
+  echo "repository workspace must remain inside checkout" >&2
+  exit 2
+  ;;
+esac
 TMP_ROOT="$(mktemp -d)"
 trap 'rm -rf "$TMP_ROOT"' EXIT
 
 # Read the organization repository list supplied by the workflow, or discover it.
-command -v gh >/dev/null || { echo "gh is required" >&2; exit 2; }
+command -v gh >/dev/null || {
+  echo "gh is required" >&2
+  exit 2
+}
 
 if [[ -n "$REPO_LIST" && -f "$REPO_LIST" ]]; then
   mapfile -t repos < <(sed '/^[[:space:]]*$/d' "$REPO_LIST")
@@ -48,10 +55,17 @@ run() {
 
 # Clone and scan each organization repository according to detected file types.
 for repo in "${repos[@]}"; do
-  [[ "$repo" =~ ^[A-Za-z0-9._-]+$ ]] || { echo "invalid repository name: $repo" >&2; exit 2; }
+  [[ "$repo" =~ ^[A-Za-z0-9._-]+$ ]] || {
+    echo "invalid repository name: $repo" >&2
+    exit 2
+  }
   target="$ROOT/$repo"
   resolved="$(realpath -m "$target")"
-  case "$resolved" in "$ROOT"/*) ;; *) echo "repository path escapes workspace: $repo" >&2; exit 2 ;; esac
+  case "$resolved" in "$ROOT"/*) ;; *)
+    echo "repository path escapes workspace: $repo" >&2
+    exit 2
+    ;;
+  esac
 
   out="$REPORT/$repo"
   mkdir -p "$out"
@@ -121,7 +135,8 @@ for repo in "${repos[@]}"; do
   # Docker: lint Dockerfiles, scan configuration, and evaluate Docker OPA policies.
   if find "$target" -type f -iname 'dockerfile*' -print -quit | grep -q .; then
     if grep -RInE '^[[:space:]]*FROM[[:space:]]+[^[:space:]]+:latest([[:space:]]|$)' "$target" --include='Dockerfile*' >/dev/null; then
-      status=1; errors+=("image-tag|high|Dockerfile uses the mutable latest image tag")
+      status=1
+      errors+=("image-tag|high|Dockerfile uses the mutable latest image tag")
     fi
     mapfile -d '' -t dockerfiles < <(
       find "$target" -type f -iname 'dockerfile*' -print0
@@ -134,7 +149,8 @@ for repo in "${repos[@]}"; do
   # YAML/Kubernetes: apply Kyverno and Kubernetes OPA policies to YAML content.
   if find "$target" -type f \( -name '*.yml' -o -name '*.yaml' \) -print -quit | grep -q .; then
     if grep -RInE '^[[:space:]]*image:[[:space:]]*[^[:space:]]+:latest([[:space:]]|$)' "$target" --include='*.yml' --include='*.yaml' >/dev/null; then
-      status=1; errors+=("image-tag|high|YAML or Kubernetes configuration uses the mutable latest image tag")
+      status=1
+      errors+=("image-tag|high|YAML or Kubernetes configuration uses the mutable latest image tag")
     fi
     run kyverno kyverno apply "$GITHUB_WORKSPACE/kyverno/policies" --resource "$target"
     run opa-yaml conftest test "$target" --policy "$GITHUB_WORKSPACE/opa/kubernetes"
@@ -160,7 +176,7 @@ for repo in "${repos[@]}"; do
       echo '|---|---|---|'
 
       for finding in "${errors[@]}"; do
-        IFS='|' read -r scanner priority detail <<< "$finding"
+        IFS='|' read -r scanner priority detail <<<"$finding"
         echo "| $scanner | $priority | ${detail//|/\\|} |"
       done
     fi
@@ -169,12 +185,10 @@ for repo in "${repos[@]}"; do
     echo "Scanner logs are stored beside this report. Secrets must not be added to them."
   } >"$out/report.md"
 
-  (( status != 0 )) && failures=$((failures + 1))
+  ((status != 0)) && failures=$((failures + 1))
 done
 
 # Write the organization-level result and fail the workflow if any repository failed.
 printf '{"organization":"%s","repositories":%d,"failed":%d}\n' "$GITHUB_ORG" "${#repos[@]}" "$failures" >"$REPORT/summary.json"
 
-exit "$(( failures > 0 ? 1 : 0 ))"
-
-
+exit "$((failures > 0 ? 1 : 0))"

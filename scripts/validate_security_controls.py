@@ -88,12 +88,20 @@ def gate(findings: Path, exceptions: Path) -> list[str]:
         return []
     data = json.loads(findings.read_text(encoding="utf-8"))
     items = data if isinstance(data, list) else data.get("findings", [])
-    approved = {
-        fields(p).get("policy_id")
-        for p in exceptions.rglob("*.yaml")
-        if fields(p).get("status") == "approved"
-        and fields(p).get("valid_till", "") >= date.today().isoformat()
-    }
+    approved = set()
+    for path in exceptions.rglob("*.yaml"):
+        if "exceptions" not in path.parts:
+            continue
+        try:
+            record = fields(path)
+        except yaml.YAMLError:
+            # validate_exceptions reports the malformed record separately.
+            continue
+        if (
+            record.get("status") == "approved"
+            and record.get("valid_till", "") >= date.today().isoformat()
+        ):
+            approved.add(record.get("policy_id"))
     return [
         f"{x.get('policy_id', 'unknown')}: {x.get('severity')}"
         for x in items
