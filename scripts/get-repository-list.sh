@@ -5,7 +5,7 @@ set -Eeuo pipefail
 : "${GH_TOKEN:?Set GH_TOKEN}"
 
 OUTPUT_FILE="${1:-repository-names.txt}"
-EXCEPTION_FILE="${2:-repository/scan-exceptions.txt}"
+EXCEPTION_SOURCE="${2:-repository/exceptions}"
 INVENTORY_FILE="${3:-repository/discovered-repositories.yaml}"
 
 command -v gh >/dev/null || {
@@ -39,10 +39,24 @@ while IFS= read -r repo; do
   }
 done <"$tmp_configured"
 
-# Read approved exclusions, ignoring blank lines and comments.
-if [[ -f "$EXCEPTION_FILE" ]]; then
-  sed -e 's/[[:space:]]*#.*$//' -e '/^[[:space:]]*$/d' "$EXCEPTION_FILE" | sort -u >"$tmp_exceptions"
+# Read structured exception metadata. A text file remains supported for
+# compatibility with older callers.
+if [[ -d "$EXCEPTION_SOURCE" ]]; then
+  find "$EXCEPTION_SOURCE" -type f \( -name '*.yaml' -o -name '*.yml' \) -print0 |
+    xargs -0 -r grep -hE '^[[:space:]]*name:[[:space:]]*' |
+    awk -F: '{ value=$2; gsub(/^[[:space:]"\047]+|[[:space:]"\047]+$/, "", value); print value }' |
+    sort -u >"$tmp_exceptions"
+elif [[ -f "$EXCEPTION_SOURCE" ]]; then
+  sed -e 's/[[:space:]]*#.*$//' -e '/^[[:space:]]*$/d' "$EXCEPTION_SOURCE" |
+    sort -u >"$tmp_exceptions"
 fi
+
+while IFS= read -r repo; do
+  [[ "$repo" =~ ^[A-Za-z0-9._-]+$ ]] || {
+    echo "invalid repository name in exception inventory: $repo" >&2
+    exit 2
+  }
+done <"$tmp_exceptions"
 
 # Scan only repositories that are both accessible and explicitly configured,
 # then remove exact names with approved scan exclusions.

@@ -23,6 +23,13 @@ Repository classification:
 - `access_scope: individual` is `medium` when access is intentionally granted to named users and the repository is not public.
 - Store `security_severity` as lowercase `critical`, `high`, `medium`, `low`, or `info` and review it when visibility or access changes.
 
+## Scan exceptions
+
+Add one YAML file per excluded repository under `exceptions/`. Use the same
+repository ownership and classification fields shown above, then add `reason`,
+`approved_by`, and `valid_till`. The organization scan removes these repository
+names from its dynamic matrix, and the consolidated report lists every exception.
+
 ## Documentation conventions
 
 - **Structure:** Keep policies, rules, exceptions, reports, and executable helpers in their designated subfolders.

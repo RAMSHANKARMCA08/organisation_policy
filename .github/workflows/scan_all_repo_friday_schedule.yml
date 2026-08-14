@@ -92,7 +92,7 @@ jobs:
         run: |
           bash scripts/get-repository-list.sh \
             repository-names.txt \
-            repository/scan-exceptions.txt \
+            repository/exceptions \
             repository/discovered-repositories.yaml
 
       - name: Build repository matrix
@@ -301,13 +301,15 @@ jobs:
           SMTP_SERVER: ${{ vars.SMTP_SERVER }}
           SMTP_PORT: ${{ vars.SMTP_PORT }}
           SMTP_SECURITY: ${{ vars.SMTP_SECURITY }}
+          REPORT_TIMEZONE: ${{ vars.REPORT_TIMEZONE }}
         run: |
           python scripts/send_email_report.py \
             --attachment organization-devsecops-reports.zip \
             --recipient "${{ vars.MAIL_USERNAME }}" \
-            --subject "Organization DevSecOps scan report" \
             --body-file consolidated-reports/pipeline-status.txt \
-            --html-file consolidated-reports/organization-consolidated.html
+            --html-file consolidated-reports/organization-consolidated.html \
+            --inline-image consolidated-reports/severity-pie.png \
+            --inline-image consolidated-reports/repository-pie.png
 
       - name: Final pipeline gate
         if: always()

@@ -20,6 +20,7 @@ application runtime.
 |-- owners/                    # Per-policy-engine ownership metadata
 |-- policy/                    # Policy documents and the exception-record schema
 |-- repository/                # Repository inventory, classification, contacts, and scan exclusions
+|   `-- exceptions/            # Structured repositories excluded from scanning
 |-- runbook/                   # Troubleshooting guides for scan and deployment failures
 |-- sample/                    # Example generated organization report
 |-- scripts/                   # Scan orchestration, validation, normalization, and reporting tools
@@ -49,7 +50,7 @@ generated reports are intentionally omitted from the tree.
   tool-by-repository Scan matrix before the combined Report and Mail job.
   Schedule and commit/PR triggers remain commented out.
 - `scripts/get-repository-list.sh` queries the configured GitHub organization,
-  applies `repository/scan-exceptions.txt`, and produces the repository list and
+  applies entries from `repository/exceptions/`, and produces the repository list and
   missing-metadata inventory consumed by the scheduled workflow.
 - `scripts/scan-organization.sh` is the core scan orchestrator. It clones each
   selected repository into a temporary workspace, chooses scanners based on the
@@ -69,8 +70,8 @@ generated reports are intentionally omitted from the tree.
   policy-engine directories with `owners/` and repository YAML files.
 - `scripts/generate_consolidated_report.py` reads raw scan reports, applies active
   exception data through `scripts/exception_loader.py`, and creates organization
-  and per-repository HTML reports. `sample/organization-consolidated-sample.html`
-  demonstrates the generated output.
+  and per-repository HTML reports, including severity and repository-total pie
+  charts. `sample/organization-consolidated-sample.html` demonstrates the output.
 - `scripts/generate_policy_index.py` rebuilds `POLICY_INDEX.md` from policy files;
   run it when policy metadata or rules change.
 - `scripts/send_email_report.py` sends the packaged scan reports through SMTP
@@ -80,7 +81,8 @@ generated reports are intentionally omitted from the tree.
   authentication from Actions secrets. `SMTP_OAUTH2_TOKEN` is preferred when
   configured; `MAIL_APP_PASSWORD` is the fallback for SMTP clients without
   OAuth. The required `SMTP_SERVER`, `SMTP_PORT`, and `SMTP_SECURITY` Actions
-  variables configure delivery. Set `SMTP_SECURITY` to `ssl` or `starttls`.
+  variables configure delivery. Set `SMTP_SECURITY` to `ssl` or `starttls` and
+  `REPORT_TIMEZONE` to the timezone used in timestamped email subjects.
 - `repository/classification.schema.json` defines repository inventory fields,
   while the other YAML files in `repository/` record repository ownership and
   security classification used by governance checks.

@@ -1,0 +1,10 @@
+name: sample-maintenance-repository
+project: sample-maintenance-project
+point_of_contact_1: owner@example.com
+point_of_contact_2: security@example.com
+visibility: private
+access_scope: team
+security_severity: medium
+reason: Repository is temporarily excluded while maintenance is completed.
+approved_by: security-governance
+valid_till: 2026-12-31

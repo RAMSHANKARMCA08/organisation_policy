@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [
+    {"$ref": "classification.schema.json"},
+    {
+      "type": "object",
+      "required": ["reason", "approved_by", "valid_till"],
+      "properties": {
+        "reason": {"type": "string", "minLength": 5},
+        "approved_by": {"type": "string", "minLength": 3},
+        "valid_till": {"type": "string", "format": "date"}
+      }
+    }
+  ]
+}

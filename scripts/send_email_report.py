@@ -8,17 +8,20 @@ import base64
 import os
 import smtplib
 import sys
+from datetime import datetime
 from email.message import EmailMessage
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--attachment", type=Path, required=True)
     parser.add_argument("--recipient", required=True)
-    parser.add_argument("--subject", default="Organization DevSecOps scan report")
+    parser.add_argument("--subject")
     parser.add_argument("--body-file", type=Path)
     parser.add_argument("--html-file", type=Path)
+    parser.add_argument("--inline-image", type=Path, action="append", default=[])
     args = parser.parse_args()
 
     username = os.environ.get("MAIL_USERNAME")
@@ -27,6 +30,7 @@ def main() -> int:
     smtp_server = os.environ.get("SMTP_SERVER")
     smtp_port_text = os.environ.get("SMTP_PORT")
     smtp_security = os.environ.get("SMTP_SECURITY")
+    report_timezone = os.environ.get("REPORT_TIMEZONE")
     missing = [
         name
         for name, value in (
@@ -34,6 +38,7 @@ def main() -> int:
             ("SMTP_SERVER", smtp_server),
             ("SMTP_PORT", smtp_port_text),
             ("SMTP_SECURITY", smtp_security),
+            ("REPORT_TIMEZONE", report_timezone),
         )
         if not value
     ]
@@ -52,7 +57,15 @@ def main() -> int:
     smtp_server = smtp_server.strip()
     smtp_port_text = smtp_port_text.strip()
     smtp_security = smtp_security.strip().lower()
+    report_timezone = report_timezone.strip()
     username = username.strip()
+    try:
+        timestamp = datetime.now(ZoneInfo(report_timezone)).strftime(
+            "%d-%m-%Y %I:%M %p"
+        )
+    except ZoneInfoNotFoundError:
+        print(f"Unknown REPORT_TIMEZONE: {report_timezone}", file=sys.stderr)
+        return 2
     try:
         smtp_port = int(smtp_port_text)
     except ValueError:
@@ -85,7 +98,9 @@ def main() -> int:
     message = EmailMessage()
     message["From"] = username
     message["To"] = args.recipient
-    message["Subject"] = args.subject
+    message["Subject"] = (
+        args.subject or f"Organization DevSecOps scan report - {timestamp}"
+    )
     body = "The organization DevSecOps scan has completed. Reports are attached."
     if args.body_file:
         if not args.body_file.is_file():
@@ -97,9 +112,24 @@ def main() -> int:
         if not args.html_file.is_file():
             print(f"HTML email file not found: {args.html_file}", file=sys.stderr)
             return 2
-        message.add_alternative(
-            args.html_file.read_text(encoding="utf-8"), subtype="html"
-        )
+        html_body = args.html_file.read_text(encoding="utf-8")
+        for index, image_path in enumerate(args.inline_image, 1):
+            if not image_path.is_file():
+                print(f"Inline image not found: {image_path}", file=sys.stderr)
+                return 2
+            content_id = f"report-chart-{index}"
+            html_body = html_body.replace(image_path.name, f"cid:{content_id}")
+        message.add_alternative(html_body, subtype="html")
+        html_part = message.get_payload()[-1]
+        for index, image_path in enumerate(args.inline_image, 1):
+            content_id = f"report-chart-{index}"
+            html_part.add_related(
+                image_path.read_bytes(),
+                maintype="image",
+                subtype="png",
+                cid=f"<{content_id}>",
+                filename=image_path.name,
+            )
     message.add_attachment(
         args.attachment.read_bytes(),
         maintype="application",
