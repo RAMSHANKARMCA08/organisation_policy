@@ -136,8 +136,8 @@ jobs:
           retention-days: 30
           if-no-files-found: error
 
-  Report:
-    name: Report / Consolidate results
+  ReportAndMail:
+    name: Report and Mail / Consolidate and notify
     needs:
       - Install
       - Scan
@@ -200,34 +200,6 @@ jobs:
             echo "report_stage=$REPORT_RESULT"
           } | tee consolidated-reports/pipeline-status.txt
 
-      - name: Publish consolidated report
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: consolidated-security-report
-          path: |
-            consolidated-reports
-            scan-reports
-            install-status
-          retention-days: 30
-
-  Mail:
-    name: Mail / Send report and apply final gate
-    needs: Report
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout commit
-        uses: actions/checkout@v5
-
-      - name: Download consolidated report
-        id: download
-        continue-on-error: true
-        uses: actions/download-artifact@v8
-        with:
-          name: consolidated-security-report
-          path: .
-
       - name: Prepare email attachment
         id: package
         if: always()
@@ -245,7 +217,7 @@ jobs:
         if: always()
         continue-on-error: true
         env:
-          GMAIL_USERNAME: ${{ secrets.GMAIL_USERNAME }}
+          GMAIL_USERNAME: ramshankar.mca08@gmail.com
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
         run: |
           python scripts/send_email_report.py \
@@ -257,14 +229,12 @@ jobs:
       - name: Final pipeline gate
         if: always()
         env:
-          REPORT_JOB_RESULT: ${{ needs.Report.result }}
-          DOWNLOAD_RESULT: ${{ steps.download.outcome }}
+          REPORT_RESULT: ${{ steps.report.outcome }}
           PACKAGE_RESULT: ${{ steps.package.outcome }}
           EMAIL_RESULT: ${{ steps.email.outcome }}
         run: |
           {
-            echo "report_job=$REPORT_JOB_RESULT"
-            echo "report_download=$DOWNLOAD_RESULT"
+            echo "report_generation=$REPORT_RESULT"
             echo "report_packaging=$PACKAGE_RESULT"
             echo "email_delivery=$EMAIL_RESULT"
           } | tee -a consolidated-reports/pipeline-status.txt
@@ -273,3 +243,15 @@ jobs:
             consolidated-reports/pipeline-status.txt; then
             exit 1
           fi
+
+      - name: Publish consolidated report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: consolidated-security-report
+          path: |
+            consolidated-reports
+            scan-reports
+            install-status
+            organization-devsecops-reports.zip
+          retention-days: 30

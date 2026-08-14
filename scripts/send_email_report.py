@@ -21,9 +21,18 @@ def main() -> int:
 
     username = os.environ.get("GMAIL_USERNAME")
     app_password = os.environ.get("GMAIL_APP_PASSWORD")
-    if not username or not app_password:
+    missing = [
+        name
+        for name, value in (
+            ("GMAIL_USERNAME", username),
+            ("GMAIL_APP_PASSWORD", app_password),
+        )
+        if not value
+    ]
+    if missing:
         print(
-            "GMAIL_USERNAME and GMAIL_APP_PASSWORD must be configured", file=sys.stderr
+            f"Missing required environment variable(s): {', '.join(missing)}",
+            file=sys.stderr,
         )
         return 2
     if not args.attachment.is_file():
