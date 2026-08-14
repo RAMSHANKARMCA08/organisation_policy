@@ -231,11 +231,24 @@ jobs:
 
       - name: Generate consolidated report
         id: report
-        continue-on-error: true
         run: |
+          set +e
           python scripts/generate_consolidated_report.py \
             --reports scan-reports \
             --output consolidated-reports
+          report_exit=$?
+          set -e
+          if [[ -f consolidated-reports/organization-consolidated.html && \
+                -f consolidated-reports/organization-consolidated.md ]]; then
+            echo 'report_generation=success' >consolidated-reports/report-status.txt
+          else
+            echo 'report_generation=failure' >consolidated-reports/report-status.txt
+          fi
+          if ((report_exit == 0)); then
+            echo 'security_gate=success' >>consolidated-reports/report-status.txt
+          else
+            echo 'security_gate=failure' >>consolidated-reports/report-status.txt
+          fi
 
       - name: Record pipeline results
         if: always()
@@ -243,7 +256,6 @@ jobs:
           INSTALL_RESULT: ${{ needs.Install.result }}
           DISCOVERY_RESULT: ${{ needs.DiscoverRepositories.result }}
           SCAN_RESULT: ${{ needs.Scan.result }}
-          REPORT_RESULT: ${{ steps.report.outcome }}
         run: |
           mkdir -p consolidated-reports install-status scan-reports
           {
@@ -258,7 +270,12 @@ jobs:
               echo "repository_discovery=failure"
             fi
             echo "scan_stage=$SCAN_RESULT"
-            echo "report_stage=$REPORT_RESULT"
+            if [[ -f consolidated-reports/report-status.txt ]]; then
+              cat consolidated-reports/report-status.txt
+            else
+              echo "report_generation=failure"
+              echo "security_gate=failure"
+            fi
           } | tee consolidated-reports/pipeline-status.txt
 
       - name: Prepare email attachment
@@ -295,12 +312,10 @@ jobs:
       - name: Final pipeline gate
         if: always()
         env:
-          REPORT_RESULT: ${{ steps.report.outcome }}
           PACKAGE_RESULT: ${{ steps.package.outcome }}
           EMAIL_RESULT: ${{ steps.email.outcome }}
         run: |
           {
-            echo "report_generation=$REPORT_RESULT"
             echo "report_packaging=$PACKAGE_RESULT"
             echo "email_delivery=$EMAIL_RESULT"
           } | tee -a consolidated-reports/pipeline-status.txt
