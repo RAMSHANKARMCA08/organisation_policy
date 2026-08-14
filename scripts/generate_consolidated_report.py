@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse
 import html
 import json
-from datetime import date, timedelta
+from datetime import date
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path

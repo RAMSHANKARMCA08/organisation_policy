@@ -32,7 +32,7 @@ def main() -> int:
     message["To"] = args.recipient
     message["Subject"] = args.subject
     message.set_content(
-        "The organization DevSecOps scan has completed. "
+        "The full organization DevSecOps scan completed successfully. "
         "The generated scan reports are attached."
     )
     message.add_attachment(

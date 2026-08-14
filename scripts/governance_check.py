@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check policy ownership, category naming, exception expiry, and repository metadata."""
 from pathlib import Path
-import re, sys, yaml
+import sys, yaml
 from datetime import date
 
 TOOLS = {"opa", "semgrep", "trivy", "terrascan", "TFLint", "kyverno"}

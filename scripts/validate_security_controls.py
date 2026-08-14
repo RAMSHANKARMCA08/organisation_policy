@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Validate exception records, duplicate policy IDs, and release severity gates."""
 from __future__ import annotations
-import argparse, json, re, sys
+import argparse, json, sys
 from datetime import date
 from pathlib import Path
 import yaml

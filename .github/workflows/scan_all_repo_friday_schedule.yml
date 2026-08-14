@@ -136,16 +136,17 @@ jobs:
           python scripts/validate_security_controls.py --findings normalized-findings.json
 
       - name: Package reports for email
-        if: always()
+        if: success()
         run: zip -qr organization-devsecops-reports.zip scan-reports consolidated-reports
 
-      - name: Email reports
-        if: always()
+      - name: Email successful scan report
+        if: success()
         env:
           GMAIL_USERNAME: ${{ secrets.GMAIL_USERNAME }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
         run: |
           python scripts/send_email_report.py \
             --attachment organization-devsecops-reports.zip \
-            --recipient ramshankar.mca08@gmail.com
+            --recipient ramshankar.mca08@gmail.com \
+            --subject "Successful organization DevSecOps scan report"
 
