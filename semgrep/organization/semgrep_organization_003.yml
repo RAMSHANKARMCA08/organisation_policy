@@ -1,0 +1,20 @@
+# policy id: semgrep-organization-003
+# reason: enforce organization security control for organization, using Semgrep, Secrets must not be copied into image layers
+# severity: medium
+
+rules:
+  - id: ORG-SEC-ORGANIZATION-003
+    languages: [yaml]
+    message: Secrets must not be copied into image layers.
+    severity: ERROR
+    metadata:
+      organization_policy_id: SEC-ORGANIZATION-003
+      severity_normalized: critical
+      security_category: organization-security
+      remediation: Apply the approved organization remediation and rerun Semgrep.
+      technology: yaml
+    pattern: COPY .env ...
+
+
+
+

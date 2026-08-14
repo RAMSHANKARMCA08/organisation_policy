@@ -1,0 +1,31 @@
+# policy id: kyverno-kubernetes-006
+# reason: enforce organization security control for kubernetes, using Kyverno, Pods must not share host PID
+# severity: medium
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: kyverno-kubernetes-006-restrict-host-pid
+  annotations:
+    policies.kyverno.io/title: Pods must not share host PID
+    policies.kyverno.io/category: podsecurity
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: Pods must not share host PID.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: restrict-host-pid
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: Pods must not share host PID.
+        pattern:
+          spec.hostPID: false
+
+
+
+

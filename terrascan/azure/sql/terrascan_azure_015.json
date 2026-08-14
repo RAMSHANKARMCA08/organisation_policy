@@ -1,0 +1,11 @@
+﻿{
+    "template_args":  {
+                          "prefix":  ""
+                      },
+    "name":  "terrascan_azure_015",
+    "resource_type":  "azurerm_mssql_server",
+    "policy_type":  "azure",
+    "description":  "Azure SQL must disable public network access",
+    "severity":  "CRITICAL",
+    "file":  "terrascan_azure_015.rego"
+}

@@ -1,0 +1,11 @@
+﻿{
+    "template_args":  {
+                          "prefix":  ""
+                      },
+    "name":  "terrascan_aws_010",
+    "resource_type":  "aws_db_instance",
+    "policy_type":  "aws",
+    "description":  "RDS must retain backups",
+    "severity":  "HIGH",
+    "file":  "terrascan_aws_010.rego"
+}

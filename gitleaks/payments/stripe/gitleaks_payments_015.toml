@@ -1,0 +1,12 @@
+# policy id: gitleaks-payments-015
+# reason: detect stripe api key in repository content
+# severity: critical
+
+[[rules]]
+id = "gitleaks-payments-015"
+description = "Stripe API key"
+regex = '''(?:sk|rk)_(?:live|test)_[0-9a-zA-Z]{16,}'''
+secretGroup = 0
+keywords = ["stripe_key"]
+tags = ["secret", "payments"]
+

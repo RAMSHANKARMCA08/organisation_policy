@@ -1,0 +1,20 @@
+# policy id: semgrep-python-006
+# reason: enforce organization security control for python, using Semgrep, MD5 is weak cryptography
+# severity: medium
+
+rules:
+  - id: ORG-SEC-PYTHON-006
+    languages: [python]
+    message: MD5 is weak cryptography.
+    severity: ERROR
+    metadata:
+      organization_policy_id: SEC-PYTHON-006
+      severity_normalized: medium
+      security_category: organization-security
+      remediation: Apply the approved organization remediation and rerun Semgrep.
+      technology: python
+    pattern: hashlib.md5(...)
+
+
+
+

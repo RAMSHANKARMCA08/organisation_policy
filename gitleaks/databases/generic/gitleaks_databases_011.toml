@@ -1,0 +1,12 @@
+# policy id: gitleaks-databases-011
+# reason: detect database connection url in repository content
+# severity: critical
+
+[[rules]]
+id = "gitleaks-databases-011"
+description = "Database connection URL"
+regex = '''(?i)(postgres|mysql|mongodb|redis)://[^\s"']+'''
+secretGroup = 0
+keywords = ["database_url"]
+tags = ["secret", "databases"]
+

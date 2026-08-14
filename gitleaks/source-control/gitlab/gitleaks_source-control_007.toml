@@ -1,0 +1,12 @@
+# policy id: gitleaks-source-control-007
+# reason: detect gitlab token in repository content
+# severity: critical
+
+[[rules]]
+id = "gitleaks-source-control-007"
+description = "GitLab token"
+regex = '''glpat-[A-Za-z0-9_-]{20,}'''
+secretGroup = 0
+keywords = ["gitlab_token"]
+tags = ["secret", "source-control"]
+

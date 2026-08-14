@@ -1,0 +1,9 @@
+# One canonical GitHub repository name per line to exclude from the organization scan.
+# Keep exclusions reviewed, minimal, and separately approved.
+
+# SAMPLE EXCEPTIONS — replace with approved repository names or remove before production.
+sample-legacy-service
+sample-maintenance-repository
+sample-vendor-integration
+sample-archived-application
+sample-security-review

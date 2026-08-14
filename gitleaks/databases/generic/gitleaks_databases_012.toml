@@ -1,0 +1,12 @@
+# policy id: gitleaks-databases-012
+# reason: detect jdbc password in repository content
+# severity: critical
+
+[[rules]]
+id = "gitleaks-databases-012"
+description = "JDBC password"
+regex = '''(?i)jdbc[_-]?password["' :=]+[^\s"']{8,}'''
+secretGroup = 0
+keywords = ["jdbc_password"]
+tags = ["secret", "databases"]
+

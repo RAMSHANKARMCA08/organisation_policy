@@ -1,0 +1,20 @@
+# policy id: semgrep-organization-001
+# reason: enforce organization security control for organization, using Semgrep, Docker builds must not execute unverified remote scripts
+# severity: medium
+
+rules:
+  - id: ORG-SEC-ORGANIZATION-001
+    languages: [yaml]
+    message: Docker builds must not execute unverified remote scripts.
+    severity: ERROR
+    metadata:
+      organization_policy_id: SEC-ORGANIZATION-001
+      severity_normalized: high
+      security_category: organization-security
+      remediation: Apply the approved organization remediation and rerun Semgrep.
+      technology: yaml
+    pattern: RUN curl ... | sh
+
+
+
+

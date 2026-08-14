@@ -1,0 +1,20 @@
+# policy id: semgrep-jenkins-001
+# reason: enforce organization security control for jenkins, using Semgrep, Jenkinsfiles must not contain hardcoded credentials
+# severity: medium
+
+rules:
+  - id: ORG-SEC-JENKINS-001
+    languages: [groovy]
+    message: Jenkinsfiles must not contain hardcoded credentials.
+    severity: ERROR
+    metadata:
+      organization_policy_id: SEC-JENKINS-001
+      severity_normalized: high
+      security_category: organization-security
+      remediation: Apply the approved organization remediation and rerun Semgrep.
+      technology: groovy
+    pattern-regex: '(?i)(password|token|secret)\\s*[:=]\\s*["\\x27][^"\\x27]+["\\x27]'
+
+
+
+

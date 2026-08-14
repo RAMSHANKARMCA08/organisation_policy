@@ -1,0 +1,12 @@
+# policy id: gitleaks-identity-018
+# reason: detect jwt signing secret in repository content
+# severity: critical
+
+[[rules]]
+id = "gitleaks-identity-018"
+description = "JWT signing secret"
+regex = '''(?i)jwt[_-]?secret["' :=]+[^\s"']{16,}'''
+secretGroup = 0
+keywords = ["jwt_secret"]
+tags = ["secret", "identity"]
+

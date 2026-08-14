@@ -1,0 +1,11 @@
+﻿{
+    "template_args":  {
+                          "prefix":  ""
+                      },
+    "name":  "terrascan_gcp_030",
+    "resource_type":  "google_sql_database_instance",
+    "policy_type":  "gcp",
+    "description":  "GCP SQL instances must require SSL",
+    "severity":  "HIGH",
+    "file":  "terrascan_gcp_030.rego"
+}

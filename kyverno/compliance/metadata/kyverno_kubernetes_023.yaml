@@ -1,0 +1,31 @@
+# policy id: kyverno-kubernetes-023
+# reason: enforce organization security control for kubernetes, using Kyverno, Resources must identify an owning team
+# severity: medium
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: kyverno-kubernetes-023-require-owner-label
+  annotations:
+    policies.kyverno.io/title: Resources must identify an owning team
+    policies.kyverno.io/category: compliance
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: Resources must identify an owning team.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-owner-label
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+      validate:
+        message: Resources must identify an owning team.
+        pattern:
+          metadata.labels.owner: '?*'
+
+
+
+

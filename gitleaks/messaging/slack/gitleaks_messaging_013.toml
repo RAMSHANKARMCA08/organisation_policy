@@ -1,0 +1,12 @@
+# policy id: gitleaks-messaging-013
+# reason: detect slack token in repository content
+# severity: critical
+
+[[rules]]
+id = "gitleaks-messaging-013"
+description = "Slack token"
+regex = '''xox[baprs]-[0-9A-Za-z-]{10,}'''
+secretGroup = 0
+keywords = ["slack_token"]
+tags = ["secret", "messaging"]
+

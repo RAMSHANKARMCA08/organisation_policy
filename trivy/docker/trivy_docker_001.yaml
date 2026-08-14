@@ -1,0 +1,20 @@
+# policy id: trivy-docker-001
+# reason: enforce organization security control for docker, using Trivy, Container root user
+# severity: medium
+
+policy_id: TRIVY-DOCKER-001
+tool: Trivy
+category: docker
+sequence: 001
+title: Container root user
+description: Detect containers configured to run as root where detectable.
+severity: high
+security_risk: Detect containers configured to run as root where detectable.
+remediation: Apply the approved organization remediation and rerun Trivy.
+organization_policy_reference: organization-security-policy
+implementation: Trivy built-in misconfiguration scan
+status: ACTIVE
+
+
+
+

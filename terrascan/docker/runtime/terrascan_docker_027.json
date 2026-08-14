@@ -1,0 +1,11 @@
+﻿{
+    "template_args":  {
+                          "prefix":  ""
+                      },
+    "name":  "terrascan_docker_027",
+    "resource_type":  "docker_container",
+    "policy_type":  "docker",
+    "description":  "Docker containers should run as non-root",
+    "severity":  "HIGH",
+    "file":  "terrascan_docker_027.rego"
+}

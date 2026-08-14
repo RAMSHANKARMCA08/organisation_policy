@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Friday DevSecOps Scan - Sample</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; color: #17202a; }
+    table { border-collapse: collapse; margin: 1rem 0 2rem; width: 100%; }
+    th, td { border: 1px solid #cbd5e1; padding: .55rem; text-align: left; }
+    th { background: #f1f5f9; }
+    .chart { width: 230px; height: 230px; border-radius: 50%; background: conic-gradient(#b91c1c 0 14.29%, #ea580c 14.29% 71.43%, #ca8a04 71.43% 100%); }
+    .critical { color: #b91c1c; font-weight: bold; }
+    .high { color: #ea580c; font-weight: bold; }
+    .fail { color: #b91c1c; font-size: 1.25rem; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Organization DevSecOps consolidated report</h1>
+  <p>Generated: 2026-08-14T22:18:42Z</p>
+  <p>Repositories scanned: 20 &nbsp;|&nbsp; Repositories with findings: 3 &nbsp;|&nbsp; Total findings: 7</p>
+
+  <h2>Severity distribution</h2>
+  <div class="chart" role="img" aria-label="Severity pie chart: 1 critical, 4 high, 2 medium"></div>
+  <ul>
+    <li class="critical">Critical: 1</li>
+    <li class="high">High: 4</li>
+    <li>Medium: 2</li>
+    <li>Low: 0</li>
+    <li>Info: 0</li>
+    <li>Review: 0</li>
+  </ul>
+
+  <h2>Critical and high findings by repository</h2>
+  <table>
+    <tr><th>Repository</th><th>Critical</th><th>High</th></tr>
+    <tr><td>payments-api</td><td>1</td><td>2</td></tr>
+    <tr><td>customer-portal</td><td>0</td><td>1</td></tr>
+    <tr><td>deployment-orchestrator</td><td>0</td><td>1</td></tr>
+  </table>
+
+  <h2>Findings</h2>
+  <table>
+    <tr><th>Repository</th><th>Tool</th><th>Policy ID</th><th>Severity</th><th>File</th><th>Description</th></tr>
+    <tr><td>payments-api</td><td>trivy</td><td>CVE-2021-44228</td><td class="critical">critical</td><td>pom.xml</td><td>Log4j dependency is vulnerable to remote code execution.</td></tr>
+    <tr><td>payments-api</td><td>gitleaks</td><td>gitleaks-cloud-001</td><td class="high">high</td><td>deploy/aws.tf</td><td>AWS access key detected.</td></tr>
+    <tr><td>customer-portal</td><td>opa</td><td>opa-kubernetes-011</td><td class="high">high</td><td>deploy.yaml:27</td><td>Workload uses the mutable latest image tag.</td></tr>
+  </table>
+
+  <h2>Exceptions expiring in the next 30 days</h2>
+  <table>
+    <tr><th>Repository</th><th>Policy ID</th><th>Reason</th><th>Valid till</th><th>Days remaining</th></tr>
+    <tr><td>inventory-service</td><td>semgrep-python-004</td><td>Legacy parser migration in progress.</td><td>2026-08-28</td><td>14</td></tr>
+    <tr><td>warehouse-automation</td><td>opa-terraform-002</td><td>Vendor module replacement scheduled.</td><td>2026-08-20</td><td>6</td></tr>
+  </table>
+
+  <h2>Release decision</h2>
+  <p class="fail">FAIL</p>
+  <p>Critical and high findings without a valid approved exception block release.</p>
+</body>
+</html>

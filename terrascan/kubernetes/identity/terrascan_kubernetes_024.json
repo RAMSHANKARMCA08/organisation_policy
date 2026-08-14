@@ -1,0 +1,11 @@
+﻿{
+    "template_args":  {
+                          "prefix":  ""
+                      },
+    "name":  "terrascan_kubernetes_024",
+    "resource_type":  "kubernetes_role_binding",
+    "policy_type":  "kubernetes",
+    "description":  "Kubernetes role bindings must avoid cluster-admin",
+    "severity":  "HIGH",
+    "file":  "terrascan_kubernetes_024.rego"
+}

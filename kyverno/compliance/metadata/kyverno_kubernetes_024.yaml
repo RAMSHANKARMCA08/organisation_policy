@@ -1,0 +1,31 @@
+# policy id: kyverno-kubernetes-024
+# reason: enforce organization security control for kubernetes, using Kyverno, Resources must include a cost-center label
+# severity: medium
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: kyverno-kubernetes-024-require-cost-center
+  annotations:
+    policies.kyverno.io/title: Resources must include a cost-center label
+    policies.kyverno.io/category: compliance
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: Resources must include a cost-center label.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-cost-center
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+      validate:
+        message: Resources must include a cost-center label.
+        pattern:
+          metadata.labels.cost-center: '?*'
+
+
+
+

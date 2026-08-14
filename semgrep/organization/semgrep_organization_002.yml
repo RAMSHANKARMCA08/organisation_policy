@@ -1,0 +1,20 @@
+# policy id: semgrep-organization-002
+# reason: enforce organization security control for organization, using Semgrep, Container images should not run as root
+# severity: medium
+
+rules:
+  - id: ORG-SEC-ORGANIZATION-002
+    languages: [yaml]
+    message: Container images should not run as root.
+    severity: ERROR
+    metadata:
+      organization_policy_id: SEC-ORGANIZATION-002
+      severity_normalized: high
+      security_category: organization-security
+      remediation: Apply the approved organization remediation and rerun Semgrep.
+      technology: yaml
+    pattern: USER root
+
+
+
+

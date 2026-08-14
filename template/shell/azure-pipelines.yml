@@ -1,0 +1,56 @@
+trigger: none
+pr: none
+
+variables:
+  reportDirectory: '$(Build.ArtifactStagingDirectory)/shell-reports'
+
+stages:
+- stage: InstallScanners
+  jobs:
+  - job: Install
+    pool: { vmImage: ubuntu-latest }
+    steps:
+    - task: UsePythonVersion@0
+      inputs: { versionSpec: '3.12' }
+    - bash: |
+        set -euo pipefail
+        mkdir -p "$(Build.ArtifactStagingDirectory)/bundle/bin"
+        # ShellCheck: scan shell scripts for unsafe commands and variable handling.
+        sudo apt-get update
+        sudo apt-get install --yes shellcheck
+        cp "$(command -v shellcheck)" "$(Build.ArtifactStagingDirectory)/bundle/bin/shellcheck"
+        # Semgrep: scan shell source with organization SAST rules.
+        python -m pip install --target "$(Build.ArtifactStagingDirectory)/bundle/python" semgrep
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/bundle'
+        ArtifactName: scanner-bundle
+        publishLocation: Container
+
+- stage: RunScanners
+  dependsOn: InstallScanners
+  jobs:
+  - job: Scan
+    pool: { vmImage: ubuntu-latest }
+    steps:
+    - checkout: self
+    - task: DownloadBuildArtifacts@1
+      inputs: { buildType: current, downloadType: single, artifactName: scanner-bundle, downloadPath: '$(Pipeline.Workspace)' }
+    - bash: |
+        set -Eeuo pipefail
+        bundle="$(Pipeline.Workspace)/scanner-bundle"
+        export PATH="$bundle/bin:$PATH"
+        export PYTHONPATH="$bundle/python"
+        mkdir -p "$(reportDirectory)"
+        mapfile -t files < <(find "$(Build.SourcesDirectory)" -type f \( -name '*.sh' -o -name '*.bash' \))
+        if ((${#files[@]})); then
+          shellcheck --format json "${files[@]}" > "$(reportDirectory)/shellcheck.json"
+          python3 -m semgrep scan --config semgrep/shell --json-output "$(reportDirectory)/semgrep.json" "$(Build.SourcesDirectory)"
+        else
+          echo '{"status":"not_applicable"}' > "$(reportDirectory)/shellcheck.json"
+        fi
+    - task: PublishBuildArtifacts@1
+      condition: always()
+      inputs: { PathtoPublish: '$(reportDirectory)', ArtifactName: shell-scan-reports, publishLocation: Container }
+
+

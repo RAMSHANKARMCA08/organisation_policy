@@ -1,0 +1,11 @@
+﻿{
+    "template_args":  {
+                          "prefix":  ""
+                      },
+    "name":  "terrascan_kubernetes_019",
+    "resource_type":  "kubernetes_pod",
+    "policy_type":  "kubernetes",
+    "description":  "Kubernetes pods must not be privileged",
+    "severity":  "CRITICAL",
+    "file":  "terrascan_kubernetes_019.rego"
+}

@@ -1,0 +1,12 @@
+# policy id: gitleaks-messaging-014
+# reason: detect discord token in repository content
+# severity: critical
+
+[[rules]]
+id = "gitleaks-messaging-014"
+description = "Discord token"
+regex = '''(?i)discord[_-]?token["' :=]+[A-Za-z0-9._-]{20,}'''
+secretGroup = 0
+keywords = ["discord_token"]
+tags = ["secret", "messaging"]
+

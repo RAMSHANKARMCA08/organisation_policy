@@ -1,0 +1,12 @@
+# policy id: gitleaks-web-024
+# reason: detect hardcoded password in repository content
+# severity: critical
+
+[[rules]]
+id = "gitleaks-web-024"
+description = "Hardcoded password"
+regex = '''(?i)(password|passwd|pwd)["' :=]+[^\s"']{8,}'''
+secretGroup = 0
+keywords = ["password_assignment"]
+tags = ["secret", "web"]
+

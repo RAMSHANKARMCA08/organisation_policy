@@ -1,0 +1,20 @@
+# policy id: semgrep-shell-001
+# reason: enforce organization security control for shell, using Semgrep, Dynamic eval can execute attacker-controlled shell input
+# severity: medium
+
+rules:
+  - id: ORG-SEC-SHELL-001
+    languages: [bash]
+    message: Dynamic eval can execute attacker-controlled shell input.
+    severity: ERROR
+    metadata:
+      organization_policy_id: SEC-SHELL-001
+      severity_normalized: high
+      security_category: organization-security
+      remediation: Apply the approved organization remediation and rerun Semgrep.
+      technology: bash
+    pattern: eval "$CMD"
+
+
+
+

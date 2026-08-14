@@ -1,0 +1,12 @@
+# policy id: gitleaks-cloud-003
+# reason: detect azure client secret in repository content
+# severity: critical
+
+[[rules]]
+id = "gitleaks-cloud-003"
+description = "Azure client secret"
+regex = '''(?i)azure[_-]?client[_-]?secret["' :=]+[A-Za-z0-9._~-]{20,}'''
+secretGroup = 0
+keywords = ["azure_client_secret"]
+tags = ["secret", "cloud"]
+

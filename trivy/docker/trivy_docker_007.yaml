@@ -1,0 +1,20 @@
+# policy id: trivy-docker-007
+# reason: enforce organization security control for docker, using Trivy, Image package vulnerabilities
+# severity: medium
+
+policy_id: TRIVY-DOCKER-007
+tool: Trivy
+category: docker
+sequence: 007
+title: Image package vulnerabilities
+description: Detect known vulnerabilities in image OS/application packages.
+severity: critical
+security_risk: Detect known vulnerabilities in image OS/application packages.
+remediation: Apply the approved organization remediation and rerun Trivy.
+organization_policy_reference: organization-security-policy
+implementation: Trivy image vulnerability scan
+status: ACTIVE
+
+
+
+

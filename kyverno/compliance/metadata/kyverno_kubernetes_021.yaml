@@ -1,0 +1,31 @@
+# policy id: kyverno-kubernetes-021
+# reason: enforce organization security control for kubernetes, using Kyverno, Resources must include a lowercase environment label
+# severity: medium
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: kyverno-kubernetes-021-require-env-label
+  annotations:
+    policies.kyverno.io/title: Resources must include a lowercase environment label
+    policies.kyverno.io/category: compliance
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: Resources must include a lowercase environment label.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-env-label
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+      validate:
+        message: Resources must include a lowercase environment label.
+        pattern:
+          metadata.labels.env: dev | stage | prod
+
+
+
+

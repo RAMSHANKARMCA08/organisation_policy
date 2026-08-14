@@ -1,0 +1,31 @@
+# policy id: kyverno-kubernetes-004
+# reason: enforce organization security control for kubernetes, using Kyverno, Containers must drop all Linux capabilities
+# severity: medium
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: kyverno-kubernetes-004-drop-capabilities
+  annotations:
+    policies.kyverno.io/title: Containers must drop all Linux capabilities
+    policies.kyverno.io/category: podsecurity
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: Containers must drop all Linux capabilities.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: drop-capabilities
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: Containers must drop all Linux capabilities.
+        pattern:
+          spec.containers[*].securityContext.capabilities.drop[]: ALL
+
+
+
+

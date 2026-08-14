@@ -1,0 +1,31 @@
+# policy id: kyverno-kubernetes-010
+# reason: enforce organization security control for kubernetes, using Kyverno, Workload containers must define a readiness probe
+# severity: medium
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: kyverno-kubernetes-010-require-probe
+  annotations:
+    policies.kyverno.io/title: Workload containers must define a readiness probe
+    policies.kyverno.io/category: podsecurity
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: Workload containers must define a readiness probe.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-probe
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+      validate:
+        message: Workload containers must define a readiness probe.
+        pattern:
+          spec.template.spec.containers[*].readinessProbe: '*'
+
+
+
+

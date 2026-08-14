@@ -1,0 +1,11 @@
+﻿{
+    "template_args":  {
+                          "prefix":  ""
+                      },
+    "name":  "terrascan_azure_013",
+    "resource_type":  "azurerm_storage_account",
+    "policy_type":  "azure",
+    "description":  "Azure storage must require TLS 1.2",
+    "severity":  "HIGH",
+    "file":  "terrascan_azure_013.rego"
+}

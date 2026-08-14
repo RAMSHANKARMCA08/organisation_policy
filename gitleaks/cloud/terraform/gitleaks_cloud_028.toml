@@ -1,0 +1,12 @@
+# policy id: gitleaks-cloud-028
+# reason: detect terraform cloud token in repository content
+# severity: critical
+
+[[rules]]
+id = "gitleaks-cloud-028"
+description = "Terraform Cloud token"
+regex = '''(?i)terraform[_-]?cloud[_-]?(token|api[_-]?key)["' :=]+[^\s"']{16,}'''
+secretGroup = 0
+keywords = ["terraform_cloud_token"]
+tags = ["secret", "cloud"]
+

@@ -1,0 +1,20 @@
+# policy id: semgrep-python-008
+# reason: enforce organization security control for python, using Semgrep, os.system can enable command injection
+# severity: medium
+
+rules:
+  - id: ORG-SEC-PYTHON-008
+    languages: [python]
+    message: os.system can enable command injection.
+    severity: ERROR
+    metadata:
+      organization_policy_id: SEC-PYTHON-008
+      severity_normalized: high
+      security_category: organization-security
+      remediation: Apply the approved organization remediation and rerun Semgrep.
+      technology: python
+    pattern: os.system($CMD)
+
+
+
+

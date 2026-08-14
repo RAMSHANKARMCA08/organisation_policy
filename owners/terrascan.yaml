@@ -1,0 +1,6 @@
+tool: terrascan
+owner: cloud-security
+backup_owner: platform-security
+review_frequency: quarterly
+escalation: security-oncall@example.com
+deprecation: mark deprecated before retirement

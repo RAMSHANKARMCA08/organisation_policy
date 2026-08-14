@@ -1,0 +1,20 @@
+# policy id: semgrep-organization-006
+# reason: enforce organization security control for organization, using Semgrep, Terraform must not expose administrative network access publicly
+# severity: medium
+
+rules:
+  - id: ORG-SEC-ORGANIZATION-006
+    languages: [yaml]
+    message: Terraform must not expose administrative network access publicly.
+    severity: ERROR
+    metadata:
+      organization_policy_id: SEC-ORGANIZATION-006
+      severity_normalized: critical
+      security_category: organization-security
+      remediation: Apply the approved organization remediation and rerun Semgrep.
+      technology: yaml
+    pattern: resource "aws_security_group_rule" { ... cidr_blocks = ["0.0.0.0/0"] ... }
+
+
+
+

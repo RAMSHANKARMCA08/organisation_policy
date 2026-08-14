@@ -1,0 +1,31 @@
+# policy id: kyverno-kubernetes-005
+# reason: enforce organization security control for kubernetes, using Kyverno, Pods must not use host networking
+# severity: medium
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: kyverno-kubernetes-005-restrict-host-network
+  annotations:
+    policies.kyverno.io/title: Pods must not use host networking
+    policies.kyverno.io/category: podsecurity
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: Pods must not use host networking.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: restrict-host-network
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: Pods must not use host networking.
+        pattern:
+          spec.hostNetwork: false
+
+
+
+

@@ -1,0 +1,6 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Only documented non-secret test fixtures may be excluded."
+paths = ["(^|/)(README|docs|examples)/"]

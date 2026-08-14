@@ -1,0 +1,31 @@
+# policy id: kyverno-kubernetes-012
+# reason: enforce organization security control for kubernetes, using Kyverno, Pods must disable automatic service account token mounting
+# severity: medium
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: kyverno-kubernetes-012-automount-token-disabled
+  annotations:
+    policies.kyverno.io/title: Pods must disable automatic service account token mounting
+    policies.kyverno.io/category: podsecurity
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: Pods must disable automatic service account token mounting.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: automount-token-disabled
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: Pods must disable automatic service account token mounting.
+        pattern:
+          spec.automountServiceAccountToken: false
+
+
+
+

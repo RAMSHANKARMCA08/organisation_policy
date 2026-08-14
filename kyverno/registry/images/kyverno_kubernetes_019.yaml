@@ -1,0 +1,31 @@
+# policy id: kyverno-kubernetes-019
+# reason: enforce organization security control for kubernetes, using Kyverno, Containers must use an explicit pull policy
+# severity: medium
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: kyverno-kubernetes-019-require-image-pull-policy
+  annotations:
+    policies.kyverno.io/title: Containers must use an explicit pull policy
+    policies.kyverno.io/category: registry
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: Containers must use an explicit pull policy.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-image-pull-policy
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: Containers must use an explicit pull policy.
+        pattern:
+          spec.containers[*].imagePullPolicy: '?*'
+
+
+
+

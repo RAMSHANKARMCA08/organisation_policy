@@ -1,0 +1,20 @@
+# policy id: trivy-terraform-001
+# reason: enforce organization security control for terraform, using Trivy, Public S3
+# severity: medium
+
+policy_id: TRIVY-TERRAFORM-001
+tool: Trivy
+category: terraform
+sequence: 001
+title: Public S3
+description: Detect publicly accessible S3 configuration.
+severity: high
+security_risk: Detect publicly accessible S3 configuration.
+remediation: Apply the approved organization remediation and rerun Trivy.
+organization_policy_reference: organization-security-policy
+implementation: Trivy built-in IaC misconfiguration scan
+status: ACTIVE
+
+
+
+

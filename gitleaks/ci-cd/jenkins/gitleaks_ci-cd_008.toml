@@ -1,0 +1,12 @@
+# policy id: gitleaks-ci-cd-008
+# reason: detect jenkins api token in repository content
+# severity: critical
+
+[[rules]]
+id = "gitleaks-ci-cd-008"
+description = "Jenkins API token"
+regex = '''(?i)jenkins[_-]?api[_-]?token["' :=]+[A-Za-z0-9]{20,}'''
+secretGroup = 0
+keywords = ["jenkins_api_token"]
+tags = ["secret", "ci-cd"]
+

@@ -1,0 +1,12 @@
+# policy id: gitleaks-identity-020
+# reason: detect ssh password in repository content
+# severity: critical
+
+[[rules]]
+id = "gitleaks-identity-020"
+description = "SSH password"
+regex = '''(?i)ssh[_-]?pass(word)?["' :=]+[^\s"']{8,}'''
+secretGroup = 0
+keywords = ["ssh_password"]
+tags = ["secret", "identity"]
+

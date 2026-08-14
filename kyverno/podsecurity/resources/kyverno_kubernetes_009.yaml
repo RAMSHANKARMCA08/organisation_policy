@@ -1,0 +1,31 @@
+# policy id: kyverno-kubernetes-009
+# reason: enforce organization security control for kubernetes, using Kyverno, Containers must define CPU and memory requests
+# severity: medium
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: kyverno-kubernetes-009-require-resource-requests
+  annotations:
+    policies.kyverno.io/title: Containers must define CPU and memory requests
+    policies.kyverno.io/category: podsecurity
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: Containers must define CPU and memory requests.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-resource-requests
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: Containers must define CPU and memory requests.
+        pattern:
+          spec.containers[*].resources.requests.cpu: '*'
+
+
+
+

@@ -1,0 +1,8 @@
+application: {name: app1}
+environment: {name: prod}
+cloud:
+  provider: azure
+  azure:
+    serviceAccountAnnotations: {azure.workload.identity/client-id: ""}
+replicaCount: 3
+image: {repository: <AZURE_ACR_REPOSITORY>, tag: "1.0.0"}

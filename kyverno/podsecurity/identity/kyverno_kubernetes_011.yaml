@@ -1,0 +1,31 @@
+# policy id: kyverno-kubernetes-011
+# reason: enforce organization security control for kubernetes, using Kyverno, Pods must use an explicit service account
+# severity: medium
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: kyverno-kubernetes-011-require-service-account
+  annotations:
+    policies.kyverno.io/title: Pods must use an explicit service account
+    policies.kyverno.io/category: podsecurity
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: Pods must use an explicit service account.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-service-account
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: Pods must use an explicit service account.
+        pattern:
+          spec.serviceAccountName: '?*'
+
+
+
+

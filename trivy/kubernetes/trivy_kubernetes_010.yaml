@@ -1,0 +1,20 @@
+# policy id: trivy-kubernetes-010
+# reason: enforce organization security control for kubernetes, using Trivy, ensure no latest image is used
+# severity: high
+
+policy_id: TRIVY-KUBERNETES-010
+tool: Trivy
+category: kubernetes
+sequence: 010
+title: Mutable image tags
+description: Detect mutable or latest image tags where supported.
+severity: high
+security_risk: Detect mutable or latest image tags where supported.
+remediation: Apply the approved organization remediation and rerun Trivy.
+organization_policy_reference: organization-security-policy
+implementation: Trivy built-in misconfiguration scan
+status: ACTIVE
+
+
+
+

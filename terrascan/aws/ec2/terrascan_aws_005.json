@@ -1,0 +1,11 @@
+﻿{
+    "template_args":  {
+                          "prefix":  ""
+                      },
+    "name":  "terrascan_aws_005",
+    "resource_type":  "aws_instance",
+    "policy_type":  "aws",
+    "description":  "EC2 instances must require IMDSv2",
+    "severity":  "HIGH",
+    "file":  "terrascan_aws_005.rego"
+}

@@ -1,0 +1,20 @@
+# policy id: semgrep-jenkins-004
+# reason: enforce organization security control for jenkins, using Semgrep, ensure no latest image is used
+# severity: high
+
+rules:
+  - id: ORG-SEC-JENKINS-004
+    languages: [groovy]
+    message: Unrestricted Jenkins agents are not approved.
+    severity: ERROR
+    metadata:
+      organization_policy_id: SEC-JENKINS-004
+      severity_normalized: medium
+      security_category: organization-security
+      remediation: Apply the approved organization remediation and rerun Semgrep.
+      technology: groovy
+    pattern-regex: '(?i)agent\\s*\\{\\s*label\\s*["\\x27](any|latest)["\\x27]'
+
+
+
+

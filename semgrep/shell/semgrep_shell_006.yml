@@ -1,0 +1,20 @@
+# policy id: semgrep-shell-006
+# reason: enforce organization security control for shell, using Semgrep, Unvalidated recursive deletion is dangerous
+# severity: medium
+
+rules:
+  - id: ORG-SEC-SHELL-006
+    languages: [bash]
+    message: Unvalidated recursive deletion is dangerous.
+    severity: ERROR
+    metadata:
+      organization_policy_id: SEC-SHELL-006
+      severity_normalized: high
+      security_category: organization-security
+      remediation: Apply the approved organization remediation and rerun Semgrep.
+      technology: bash
+    pattern: rm -rf $PATH
+
+
+
+

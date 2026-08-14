@@ -1,0 +1,11 @@
+﻿{
+    "template_args":  {
+                          "prefix":  ""
+                      },
+    "name":  "terrascan_gcp_028",
+    "resource_type":  "google_storage_bucket",
+    "policy_type":  "gcp",
+    "description":  "GCP storage buckets must not be publicly readable",
+    "severity":  "HIGH",
+    "file":  "terrascan_gcp_028.rego"
+}

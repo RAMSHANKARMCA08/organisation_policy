@@ -1,0 +1,20 @@
+# policy id: trivy-terraform-003
+# reason: enforce organization security control for terraform, using Trivy, Open administrative access
+# severity: medium
+
+policy_id: TRIVY-TERRAFORM-003
+tool: Trivy
+category: terraform
+sequence: 003
+title: Open administrative access
+description: Detect unrestricted SSH/RDP access from the internet.
+severity: critical
+security_risk: Detect unrestricted SSH/RDP access from the internet.
+remediation: Apply the approved organization remediation and rerun Trivy.
+organization_policy_reference: organization-security-policy
+implementation: Trivy built-in IaC misconfiguration scan
+status: ACTIVE
+
+
+
+

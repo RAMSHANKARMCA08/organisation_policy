@@ -1,0 +1,12 @@
+# policy id: gitleaks-web-021
+# reason: detect http basic-auth url in repository content
+# severity: critical
+
+[[rules]]
+id = "gitleaks-web-021"
+description = "HTTP basic-auth URL"
+regex = '''(?i)https?://[^:/\s]+:[^@\s]+@'''
+secretGroup = 0
+keywords = ["basic_auth_url"]
+tags = ["secret", "web"]
+

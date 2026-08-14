@@ -1,0 +1,11 @@
+﻿{
+    "template_args":  {
+                          "prefix":  ""
+                      },
+    "name":  "terrascan_aws_001",
+    "resource_type":  "aws_s3_bucket",
+    "policy_type":  "aws",
+    "description":  "S3 buckets must not allow public ACLs",
+    "severity":  "HIGH",
+    "file":  "terrascan_aws_001.rego"
+}

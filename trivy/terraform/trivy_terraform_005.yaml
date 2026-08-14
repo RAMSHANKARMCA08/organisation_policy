@@ -1,0 +1,20 @@
+# policy id: trivy-terraform-005
+# reason: enforce organization security control for terraform, using Trivy, Wildcard IAM
+# severity: medium
+
+policy_id: TRIVY-TERRAFORM-005
+tool: Trivy
+category: terraform
+sequence: 005
+title: Wildcard IAM
+description: Detect excessive wildcard IAM permissions where supported.
+severity: high
+security_risk: Detect excessive wildcard IAM permissions where supported.
+remediation: Apply the approved organization remediation and rerun Trivy.
+organization_policy_reference: organization-security-policy
+implementation: Trivy built-in IaC misconfiguration scan
+status: ACTIVE
+
+
+
+

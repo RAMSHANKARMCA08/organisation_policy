@@ -1,0 +1,20 @@
+# policy id: semgrep-python-002
+# reason: enforce organization security control for python, using Semgrep, Dangerous exec enables code execution
+# severity: medium
+
+rules:
+  - id: ORG-SEC-PYTHON-002
+    languages: [python]
+    message: Dangerous exec enables code execution.
+    severity: ERROR
+    metadata:
+      organization_policy_id: SEC-PYTHON-002
+      severity_normalized: high
+      security_category: organization-security
+      remediation: Apply the approved organization remediation and rerun Semgrep.
+      technology: python
+    pattern: exec($X)
+
+
+
+

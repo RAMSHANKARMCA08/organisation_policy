@@ -1,0 +1,31 @@
+# policy id: kyverno-kubernetes-017
+# reason: enforce organization security control for kubernetes, using Kyverno, Container images must be pinned by digest
+# severity: medium
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: kyverno-kubernetes-017-require-image-digest
+  annotations:
+    policies.kyverno.io/title: Container images must be pinned by digest
+    policies.kyverno.io/category: registry
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: Container images must be pinned by digest.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-image-digest
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: Container images must be pinned by digest.
+        pattern:
+          spec.containers[*].image: '*@sha256:*'
+
+
+
+

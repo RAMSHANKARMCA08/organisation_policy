@@ -1,0 +1,31 @@
+# policy id: kyverno-kubernetes-003
+# reason: enforce organization security control for kubernetes, using Kyverno, Containers must not run privileged
+# severity: medium
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: kyverno-kubernetes-003-disallow-privileged
+  annotations:
+    policies.kyverno.io/title: Containers must not run privileged
+    policies.kyverno.io/category: podsecurity
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: Containers must not run privileged.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: disallow-privileged
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: Containers must not run privileged.
+        pattern:
+          spec.containers[*].securityContext.privileged: false
+
+
+
+

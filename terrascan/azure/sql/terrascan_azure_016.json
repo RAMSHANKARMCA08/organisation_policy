@@ -1,0 +1,11 @@
+﻿{
+    "template_args":  {
+                          "prefix":  ""
+                      },
+    "name":  "terrascan_azure_016",
+    "resource_type":  "azurerm_mssql_server",
+    "policy_type":  "azure",
+    "description":  "Azure SQL must require TLS 1.2",
+    "severity":  "HIGH",
+    "file":  "terrascan_azure_016.rego"
+}

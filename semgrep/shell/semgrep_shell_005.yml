@@ -1,0 +1,20 @@
+# policy id: semgrep-shell-005
+# reason: enforce organization security control for shell, using Semgrep, Disabling SSH host verification enables interception
+# severity: medium
+
+rules:
+  - id: ORG-SEC-SHELL-005
+    languages: [bash]
+    message: Disabling SSH host verification enables interception.
+    severity: ERROR
+    metadata:
+      organization_policy_id: SEC-SHELL-005
+      severity_normalized: high
+      security_category: organization-security
+      remediation: Apply the approved organization remediation and rerun Semgrep.
+      technology: bash
+    pattern: ssh -o StrictHostKeyChecking=no ...
+
+
+
+

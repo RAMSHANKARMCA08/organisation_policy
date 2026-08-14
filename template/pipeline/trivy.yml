@@ -1,0 +1,124 @@
+trigger: none
+
+pr: none
+
+parameters:
+  - name: scanPath
+    displayName: Repository path to scan
+    type: string
+    default: '$(Build.SourcesDirectory)'
+
+variables:
+  reportDirectory: '$(Build.ArtifactStagingDirectory)/devsecops-reports'
+
+stages:
+  - stage: InstallScanners
+    displayName: Install security scanners
+    jobs:
+      - job: Install
+        displayName: Install approved scanner versions
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - checkout: self
+
+          - task: UsePythonVersion@0
+            displayName: Select Python runtime
+            inputs:
+              versionSpec: '3.12'
+
+          - bash: |
+              set -euo pipefail
+              mkdir -p "$(Build.ArtifactStagingDirectory)/scanner-bundle/bin" "$(Build.ArtifactStagingDirectory)/scanner-bundle/venv"
+
+              # Trivy: scan filesystem, dependencies, Dockerfiles, and IaC.
+              curl --fail --location --silent --show-error https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh -o trivy-install.sh
+              sudo sh trivy-install.sh -b "$(Build.ArtifactStagingDirectory)/scanner-bundle/bin"
+
+              # Semgrep: scan Python and supported source code with organization SAST rules.
+              python -m venv "$(Build.ArtifactStagingDirectory)/scanner-bundle/venv"
+              "$(Build.ArtifactStagingDirectory)/scanner-bundle/venv/bin/pip" install --disable-pip-version-check semgrep bandit pip-audit
+
+              # ShellCheck: scan shell scripts for unsafe commands and handling.
+              sudo apt-get update
+              sudo apt-get install --yes shellcheck
+              cp "$(command -v shellcheck)" "$(Build.ArtifactStagingDirectory)/scanner-bundle/bin/shellcheck"
+
+          - task: PublishBuildArtifacts@1
+            displayName: Publish scanner bundle for the scan stage
+            inputs:
+              PathtoPublish: '$(Build.ArtifactStagingDirectory)/scanner-bundle'
+              ArtifactName: 'devsecops-scanner-bundle'
+              publishLocation: 'Container'
+            displayName: Install Trivy, Semgrep, Python tools, and ShellCheck
+
+  - stage: RunScanners
+    displayName: Run security scans
+    dependsOn: InstallScanners
+    condition: succeeded()
+    jobs:
+      - job: Scan
+        displayName: Scan repository content
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - checkout: self
+
+          - task: UsePythonVersion@0
+            displayName: Select Python runtime
+            inputs:
+              versionSpec: '3.12'
+
+          - task: DownloadBuildArtifacts@1
+            displayName: Download scanner bundle
+            inputs:
+              buildType: current
+              downloadType: single
+              artifactName: devsecops-scanner-bundle
+              downloadPath: '$(Pipeline.Workspace)/scanner'
+
+          - bash: |
+              set -Eeuo pipefail
+              export PATH="$(Pipeline.Workspace)/scanner/devsecops-scanner-bundle/bin:$(Pipeline.Workspace)/scanner/devsecops-scanner-bundle/venv/bin:$PATH"
+              mkdir -p "$(reportDirectory)"
+              target='${{ parameters.scanPath }}'
+
+              # Trivy: produce machine-readable high/critical filesystem and misconfiguration results.
+              trivy fs --scanners vuln,misconfig,secret --severity high,critical --exit-code 1 --format json --output "$(reportDirectory)/trivy.json" "$target"
+
+              # Semgrep: produce JSON SAST results for Python and organization rules.
+              semgrep scan \
+                --config semgrep/python \
+                --config semgrep/organization \
+                --json-output "$(reportDirectory)/semgrep.json" \
+                "$target"
+
+              # Python: run Bandit and dependency vulnerability checks when Python files exist.
+              if find "$target" -type f -name '*.py' -print -quit | grep -q .; then
+                bandit -r "$target" -f json -o "$(reportDirectory)/bandit.json"
+                if find "$target" -maxdepth 2 -type f -name 'requirements*.txt' -print -quit | grep -q .; then
+                  requirements_file="$(find "$target" -maxdepth 2 -type f -name 'requirements*.txt' -print -quit)"
+                  pip-audit -r "$requirements_file" --format json --output "$(reportDirectory)/pip-audit.json"
+                fi
+              else
+                echo '{"status":"not_applicable","reason":"No Python files detected"}' > "$(reportDirectory)/bandit.json"
+              fi
+
+              # Shell: run ShellCheck when shell scripts exist.
+              mapfile -t shell_files < <(find "$target" -type f \( -name '*.sh' -o -name '*.bash' \))
+              if ((${#shell_files[@]})); then
+                shellcheck --format json "${shell_files[@]}" > "$(reportDirectory)/shellcheck.json"
+              else
+                echo '{"status":"not_applicable","reason":"No shell files detected"}' > "$(reportDirectory)/shellcheck.json"
+              fi
+            displayName: Run Trivy, Semgrep, Python, and Shell scans
+
+          - task: PublishBuildArtifacts@1
+            condition: always()
+            displayName: Publish machine-readable scan reports
+            inputs:
+              PathtoPublish: '$(reportDirectory)'
+              ArtifactName: 'devsecops-scan-reports'
+              publishLocation: 'Container'
+
+

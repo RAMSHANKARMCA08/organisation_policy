@@ -1,0 +1,20 @@
+# policy id: semgrep-jenkins-006
+# reason: enforce organization security control for jenkins, using Semgrep, Production deployment commands require protected gates
+# severity: medium
+
+rules:
+  - id: ORG-SEC-JENKINS-006
+    languages: [groovy]
+    message: Production deployment commands require protected gates.
+    severity: ERROR
+    metadata:
+      organization_policy_id: SEC-JENKINS-006
+      severity_normalized: high
+      security_category: organization-security
+      remediation: Apply the approved organization remediation and rerun Semgrep.
+      technology: groovy
+    pattern-regex: '(?i)(production|prod).*(kubectl|terraform|helm|aws)'
+
+
+
+

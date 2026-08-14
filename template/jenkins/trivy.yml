@@ -1,0 +1,56 @@
+trigger: none
+pr: none
+
+variables:
+  reportDirectory: '$(Build.ArtifactStagingDirectory)/jenkins-reports'
+
+stages:
+- stage: InstallScanners
+  jobs:
+  - job: Install
+    pool: { vmImage: ubuntu-latest }
+    steps:
+    - bash: |
+        set -euo pipefail
+        mkdir -p "$(Build.ArtifactStagingDirectory)/bundle"
+        # Conftest/OPA: enforce organization Jenkins policy rules.
+        curl --fail --location --silent --show-error https://github.com/open-policy-agent/conftest/releases/download/v0.56.0/conftest_0.56.0_Linux_x86_64.tar.gz -o conftest.tar.gz
+        tar -xzf conftest.tar.gz conftest
+        mv conftest "$(Build.ArtifactStagingDirectory)/bundle/conftest"
+        # Semgrep: scan Jenkins Groovy source for SAST findings.
+        python3 -m pip install --target "$(Build.ArtifactStagingDirectory)/bundle/python" semgrep
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/bundle'
+        ArtifactName: scanner-bundle
+        publishLocation: Container
+
+- stage: RunScanners
+  dependsOn: InstallScanners
+  jobs:
+  - job: Scan
+    pool: { vmImage: ubuntu-latest }
+    steps:
+    - checkout: self
+    - task: DownloadBuildArtifacts@1
+      inputs: { buildType: current, downloadType: single, artifactName: scanner-bundle, downloadPath: '$(Pipeline.Workspace)' }
+    - bash: |
+        set -Eeuo pipefail
+        bundle="$(Pipeline.Workspace)/scanner-bundle"
+        export PATH="$bundle:$PATH"
+        export PYTHONPATH="$bundle/python"
+        mkdir -p "$(reportDirectory)"
+        mapfile -t files < <(find "$(Build.SourcesDirectory)" -type f \( -iname 'jenkinsfile' -o -name '*.groovy' \))
+        if ((${#files[@]})); then
+          # Semgrep: produce machine-readable Jenkins SAST results.
+          python3 -m semgrep scan --config semgrep/jenkins --json-output "$(reportDirectory)/semgrep.json" "$(Build.SourcesDirectory)"
+          # Conftest/OPA: enforce Jenkins organization policies.
+          conftest test "${files[@]}" --policy opa/jenkins > "$(reportDirectory)/conftest.txt"
+        else
+          echo '{"status":"not_applicable"}' > "$(reportDirectory)/jenkins.json"
+        fi
+    - task: PublishBuildArtifacts@1
+      condition: always()
+      inputs: { PathtoPublish: '$(reportDirectory)', ArtifactName: jenkins-scan-reports, publishLocation: Container }
+
+

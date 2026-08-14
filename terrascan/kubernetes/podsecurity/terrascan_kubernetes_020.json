@@ -1,0 +1,11 @@
+﻿{
+    "template_args":  {
+                          "prefix":  ""
+                      },
+    "name":  "terrascan_kubernetes_020",
+    "resource_type":  "kubernetes_pod",
+    "policy_type":  "kubernetes",
+    "description":  "Kubernetes pods should run as non-root",
+    "severity":  "HIGH",
+    "file":  "terrascan_kubernetes_020.rego"
+}

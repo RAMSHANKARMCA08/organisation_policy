@@ -1,0 +1,10 @@
+name: inventory-service
+project: supply-chain
+point_of_contact_1: inventory-owner@example.com
+point_of_contact_2: inventory-backup@example.com
+
+
+visibility: private
+access_scope: individual
+security_severity: medium
+

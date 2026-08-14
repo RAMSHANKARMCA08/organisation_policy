@@ -1,0 +1,6 @@
+tool: trivy
+owner: vulnerability-management
+backup_owner: platform-security
+review_frequency: monthly
+escalation: security-oncall@example.com
+deprecation: retain retired controls for audit history

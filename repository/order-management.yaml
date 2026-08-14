@@ -1,0 +1,10 @@
+name: order-management
+project: commerce-platform
+point_of_contact_1: orders-owner@example.com
+point_of_contact_2: orders-backup@example.com
+
+
+visibility: private
+access_scope: individual
+security_severity: medium
+

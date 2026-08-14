@@ -1,0 +1,31 @@
+# policy id: kyverno-kubernetes-030
+# reason: enforce organization security control for kubernetes, using Kyverno, Secrets must declare encryption ownership
+# severity: medium
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: kyverno-kubernetes-030-require-secret-encryption-label
+  annotations:
+    policies.kyverno.io/title: Secrets must declare encryption ownership
+    policies.kyverno.io/category: compliance
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: Secrets must declare encryption ownership.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-secret-encryption-label
+      match:
+        any:
+          - resources:
+              kinds:
+                - Secret
+      validate:
+        message: Secrets must declare encryption ownership.
+        pattern:
+          metadata.labels.encryption: 'enabled'
+
+
+
+

@@ -1,0 +1,6 @@
+tool: tflint
+owner: infrastructure-platform
+backup_owner: cloud-security
+review_frequency: quarterly
+escalation: security-oncall@example.com
+deprecation: retain permanent policy IDs

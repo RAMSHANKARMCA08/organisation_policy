@@ -1,0 +1,20 @@
+# policy id: semgrep-python-007
+# reason: enforce organization security control for python, using Semgrep, Insecure temporary-file creation is race-prone
+# severity: medium
+
+rules:
+  - id: ORG-SEC-PYTHON-007
+    languages: [python]
+    message: Insecure temporary-file creation is race-prone.
+    severity: ERROR
+    metadata:
+      organization_policy_id: SEC-PYTHON-007
+      severity_normalized: high
+      security_category: organization-security
+      remediation: Apply the approved organization remediation and rerun Semgrep.
+      technology: python
+    pattern: tempfile.mktemp(...)
+
+
+
+

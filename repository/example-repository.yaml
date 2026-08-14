@@ -1,0 +1,8 @@
+name: example-repository
+project: example-project
+point_of_contact_1: owner1@example.com
+point_of_contact_2: owner2@example.com
+visibility: private
+access_scope: individual
+security_severity: medium
+

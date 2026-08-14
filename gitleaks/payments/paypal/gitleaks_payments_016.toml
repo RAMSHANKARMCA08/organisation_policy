@@ -1,0 +1,12 @@
+# policy id: gitleaks-payments-016
+# reason: detect paypal secret in repository content
+# severity: critical
+
+[[rules]]
+id = "gitleaks-payments-016"
+description = "PayPal secret"
+regex = '''(?i)paypal[_-]?(secret|client)["' :=]+[A-Za-z0-9._-]{20,}'''
+secretGroup = 0
+keywords = ["paypal_secret"]
+tags = ["secret", "payments"]
+

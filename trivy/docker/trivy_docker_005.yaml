@@ -1,0 +1,20 @@
+# policy id: trivy-docker-005
+# reason: enforce organization security control for docker, using Trivy, Base image practice
+# severity: medium
+
+policy_id: TRIVY-DOCKER-005
+tool: Trivy
+category: docker
+sequence: 005
+title: Base image practice
+description: Detect unapproved or insecure base-image practices where supported.
+severity: high
+security_risk: Detect unapproved or insecure base-image practices where supported.
+remediation: Apply the approved organization remediation and rerun Trivy.
+organization_policy_reference: organization-security-policy
+implementation: Trivy built-in misconfiguration scan
+status: ACTIVE
+
+
+
+

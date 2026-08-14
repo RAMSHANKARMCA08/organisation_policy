@@ -1,0 +1,20 @@
+# policy id: semgrep-organization-008
+# reason: enforce organization security control for organization, using Semgrep, Source must not contain hardcoded API credentials
+# severity: medium
+
+rules:
+  - id: ORG-SEC-ORGANIZATION-008
+    languages: [yaml]
+    message: Source must not contain hardcoded API credentials.
+    severity: ERROR
+    metadata:
+      organization_policy_id: SEC-ORGANIZATION-008
+      severity_normalized: critical
+      security_category: organization-security
+      remediation: Apply the approved organization remediation and rerun Semgrep.
+      technology: yaml
+    pattern-regex: '(?i)(api[_-]?key|access[_-]?token)\\s*=\\s*["\\x27][^"\\x27]+["\\x27]'
+
+
+
+

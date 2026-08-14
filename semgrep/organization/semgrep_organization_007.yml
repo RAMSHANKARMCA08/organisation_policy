@@ -1,0 +1,20 @@
+# policy id: semgrep-organization-007
+# reason: enforce organization security control for organization, using Semgrep, Python subprocess shell execution requires safe argument handling
+# severity: medium
+
+rules:
+  - id: ORG-SEC-ORGANIZATION-007
+    languages: [yaml]
+    message: Python subprocess shell execution requires safe argument handling.
+    severity: ERROR
+    metadata:
+      organization_policy_id: SEC-ORGANIZATION-007
+      severity_normalized: high
+      security_category: organization-security
+      remediation: Apply the approved organization remediation and rerun Semgrep.
+      technology: yaml
+    pattern: subprocess.run(..., shell=True, ...)
+
+
+
+

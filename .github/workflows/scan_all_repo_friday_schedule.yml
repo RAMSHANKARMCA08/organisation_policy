@@ -1,0 +1,133 @@
+name: scan-all-repositories-friday
+
+on:
+  schedule:
+    # Friday 22:00 UTC. GitHub schedules use UTC.
+    - cron: '0 22 * * 5'
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  ListRepositories:
+    if: github.ref == 'refs/heads/master' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Load approved tool versions
+        run: cat config/tool-versions.env >> "$GITHUB_ENV"
+
+      - name: Get, filter, and print repository names
+        env:
+          GH_TOKEN: ${{ secrets.ORGANIZATION_REPO_TOKEN }}
+          GITHUB_ORG: ${{ vars.GITHUB_ORGANIZATION }}
+        run: bash scripts/get-repository-list.sh repository-names.txt repository/scan-exceptions.txt repository/discovered-repositories.yaml
+
+      - name: Publish reusable repository list
+        uses: actions/upload-artifact@v4
+        with:
+          name: repository-scan-input
+          path: |
+            repository-names.txt
+            repository/discovered-repositories.yaml
+          retention-days: 7
+
+  ScanRepositories:
+    needs: ListRepositories
+    if: github.ref == 'refs/heads/master' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download reusable repository list
+        uses: actions/download-artifact@v4
+        with:
+          name: repository-scan-input
+          path: .
+
+      - name: Load approved tool versions
+        run: cat config/tool-versions.env >> "$GITHUB_ENV"
+
+      - name: Install scanners
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Install Python validation dependencies
+        run: |
+          python -m pip install --disable-pip-version-check -r requirements-ci.txt
+
+          # Checkov: scan Terraform, Kubernetes, Helm, Docker, and cloud IaC.
+          python -m pip install --disable-pip-version-check "checkov==${CHECKOV_VERSION}"
+
+          # Gitleaks: scan repository files and Git history for secrets.
+          curl --fail --location --silent --show-error "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" -o gitleaks.tar.gz
+          tar -xzf gitleaks.tar.gz gitleaks
+          sudo install gitleaks /usr/local/bin/gitleaks
+
+          # Python security tools are installed from the pinned requirements file.
+          python -m pip install --disable-pip-version-check -r requirements-ci.txt
+
+          # ShellCheck: scan shell scripts for unsafe syntax and security defects.
+          sudo apt-get update
+          sudo apt-get install --yes shellcheck
+
+          # Trivy: scan filesystems, Dockerfiles, images, dependencies, and IaC.
+          curl --fail --location --silent --show-error https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh -o trivy-install.sh
+          sudo sh trivy-install.sh -b /usr/local/bin
+
+          # Conftest/OPA: evaluate organization Rego policies against repository content.
+          curl --fail --location --silent --show-error https://github.com/open-policy-agent/conftest/releases/download/v0.56.0/conftest_0.56.0_Linux_x86_64.tar.gz -o conftest.tar.gz
+          tar -xzf conftest.tar.gz conftest
+          sudo install conftest /usr/local/bin/conftest
+
+          # Terrascan: scan Terraform and other infrastructure-as-code resources.
+          curl --fail --location --silent --show-error https://github.com/tenable/terrascan/releases/download/v1.19.9/terrascan_1.19.9_Linux_x86_64.tar.gz -o terrascan.tar.gz
+          tar -xzf terrascan.tar.gz terrascan
+          sudo install terrascan /usr/local/bin/terrascan
+
+          # TFLint: lint Terraform syntax, providers, deprecated attributes, and configuration.
+          curl --fail --location --silent --show-error https://github.com/terraform-linters/tflint/releases/download/v0.55.1/tflint_linux_amd64.zip -o tflint.zip
+          unzip -q tflint.zip
+          sudo install tflint /usr/local/bin/tflint
+
+          # Kyverno CLI: validate Kubernetes manifests and rendered Helm resources.
+          curl --fail --location --silent --show-error https://github.com/kyverno/kyverno/releases/download/v1.14.4/kyverno-cli-linux-amd64.tar.gz -o kyverno.tar.gz
+          tar -xzf kyverno.tar.gz kyverno
+          sudo install kyverno /usr/local/bin/kyverno
+
+          # Hadolint: lint Dockerfiles for secure and maintainable image builds.
+          curl --fail --location --silent --show-error https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint-Linux-x86_64 -o hadolint
+          chmod +x hadolint
+          sudo install hadolint /usr/local/bin/hadolint
+
+      - name: Iterate and scan each repository
+        env:
+          GH_TOKEN: ${{ secrets.ORGANIZATION_REPO_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.ORGANIZATION_REPO_TOKEN }}
+          GITHUB_ORG: ${{ vars.GITHUB_ORGANIZATION }}
+        run: bash scripts/scan-organization.sh repositories-to-scan scan-reports repository-names.txt
+
+      - name: Generate consolidated and per-repository reports
+        if: always()
+        run: python scripts/generate_consolidated_report.py --reports scan-reports --output consolidated-reports
+
+      - name: Upload readable reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: organization-devsecops-reports
+          path: |
+            scan-reports/
+            consolidated-reports/
+          retention-days: 30
+
+      - name: Normalize findings and enforce release gate
+        if: always()
+        run: |
+          python scripts/normalize_findings.py --input scan-reports --output normalized-findings.json --repository organization
+          python scripts/validate_security_controls.py --findings normalized-findings.json
+

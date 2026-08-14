@@ -1,0 +1,12 @@
+# policy id: gitleaks-identity-019
+# reason: detect private key in repository content
+# severity: critical
+
+[[rules]]
+id = "gitleaks-identity-019"
+description = "Private key"
+regex = '''-----BEGIN (?:RSA|OPENSSH|EC|DSA) PRIVATE KEY-----'''
+secretGroup = 0
+keywords = ["private_key"]
+tags = ["secret", "identity"]
+

@@ -1,0 +1,12 @@
+# policy id: gitleaks-cloud-002
+# reason: detect aws secret access key in repository content
+# severity: critical
+
+[[rules]]
+id = "gitleaks-cloud-002"
+description = "AWS secret access key"
+regex = '''(?i)aws_secret_access_key["' :=]+[A-Za-z0-9/+=]{40}'''
+secretGroup = 0
+keywords = ["aws_secret_key"]
+tags = ["secret", "cloud"]
+

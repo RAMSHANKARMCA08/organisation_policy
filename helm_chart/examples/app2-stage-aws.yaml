@@ -1,0 +1,5 @@
+application: {name: app2}
+environment: {name: stage}
+cloud: {provider: aws}
+replicaCount: 2
+image: {repository: <AWS_ECR_REPOSITORY>, tag: "1.0.0"}

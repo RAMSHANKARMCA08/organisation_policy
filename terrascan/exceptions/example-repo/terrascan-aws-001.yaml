@@ -1,0 +1,9 @@
+repository: example-repo
+policy_id: terrascan-aws-001
+reason: SAMPLE - replace with approved business justification and compensating control.
+initiated_by: requestor@example.com
+approved_by: authorized-security-approver@example.com
+valid_till: 2026-12-31
+status: pending_approval
+reference: CHANGE-OR-TICKET-ID
+

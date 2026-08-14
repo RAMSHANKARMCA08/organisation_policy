@@ -1,0 +1,12 @@
+# policy id: gitleaks-ci-cd-009
+# reason: detect azure devops token in repository content
+# severity: critical
+
+[[rules]]
+id = "gitleaks-ci-cd-009"
+description = "Azure DevOps token"
+regex = '''(?i)(azure[_-]?devops|ado)[_-]?(pat|token)["' :=]+[A-Za-z0-9]{20,}'''
+secretGroup = 0
+keywords = ["azure_devops_pat"]
+tags = ["secret", "ci-cd"]
+

@@ -1,0 +1,12 @@
+# policy id: gitleaks-source-control-006
+# reason: detect github token in repository content
+# severity: critical
+
+[[rules]]
+id = "gitleaks-source-control-006"
+description = "GitHub token"
+regex = '''gh[pousr]_[A-Za-z0-9_]{20,}'''
+secretGroup = 0
+keywords = ["github_token"]
+tags = ["secret", "source-control"]
+

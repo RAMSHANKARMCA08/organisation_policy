@@ -1,0 +1,31 @@
+# policy id: kyverno-kubernetes-029
+# reason: enforce organization security control for kubernetes, using Kyverno, PersistentVolumeClaims must request encrypted storage
+# severity: medium
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: kyverno-kubernetes-029-require-storage-encryption
+  annotations:
+    policies.kyverno.io/title: PersistentVolumeClaims must request encrypted storage
+    policies.kyverno.io/category: compliance
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: PersistentVolumeClaims must request encrypted storage.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-storage-encryption
+      match:
+        any:
+          - resources:
+              kinds:
+                - PersistentVolumeClaim
+      validate:
+        message: PersistentVolumeClaims must request encrypted storage.
+        pattern:
+          metadata.annotations.storage\.class\.kubernetes\.io/encrypted: 'true'
+
+
+
+

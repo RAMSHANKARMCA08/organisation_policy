@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["policy_id", "owner", "severity", "security_category", "remediation", "status", "review_date", "source_tool"],
+  "properties": {
+    "policy_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "owner": {"type": "string", "minLength": 2},
+    "severity": {"enum": ["critical", "high", "medium", "low", "info"]},
+    "security_category": {"type": "string", "minLength": 2},
+    "remediation": {"type": "string", "minLength": 5},
+    "status": {"enum": ["active", "disabled", "deprecated"]},
+    "review_date": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+    "source_tool": {"enum": ["opa", "semgrep", "trivy", "terrascan", "tflint", "kyverno"]}
+  }
+}

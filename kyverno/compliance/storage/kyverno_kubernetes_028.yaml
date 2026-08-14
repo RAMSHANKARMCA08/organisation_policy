@@ -1,0 +1,31 @@
+# policy id: kyverno-kubernetes-028
+# reason: enforce organization security control for kubernetes, using Kyverno, Pods must not mount hostPath volumes
+# severity: medium
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: kyverno-kubernetes-028-restrict-hostpath
+  annotations:
+    policies.kyverno.io/title: Pods must not mount hostPath volumes
+    policies.kyverno.io/category: compliance
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: Pods must not mount hostPath volumes.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: restrict-hostpath
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: Pods must not mount hostPath volumes.
+        pattern:
+          spec.volumes[*].hostPath: null
+
+
+
+

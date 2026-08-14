@@ -1,0 +1,9 @@
+repository: example-repo
+policy_id: org-sec-python-010
+reason: TEST - validate exception parsing, expiry, reporting, and blocking behavior.
+initiated_by: test-requestor@example.com
+approved_by: test-approver@example.com
+valid_till: 2099-12-31
+status: pending_approval
+reference: TEST-EXCEPTION-010
+

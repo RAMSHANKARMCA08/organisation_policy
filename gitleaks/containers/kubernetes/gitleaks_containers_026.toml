@@ -1,0 +1,12 @@
+# policy id: gitleaks-containers-026
+# reason: detect kubernetes credential in repository content
+# severity: critical
+
+[[rules]]
+id = "gitleaks-containers-026"
+description = "Kubernetes credential"
+regex = '''(?i)kubeconfig[_-]?(token|password)["' :=]+[^\s"']{12,}'''
+secretGroup = 0
+keywords = ["kubeconfig_token"]
+tags = ["secret", "containers"]
+

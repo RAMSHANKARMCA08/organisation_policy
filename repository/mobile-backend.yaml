@@ -1,0 +1,10 @@
+name: mobile-backend
+project: mobile-platform
+point_of_contact_1: mobile-owner@example.com
+point_of_contact_2: mobile-backup@example.com
+
+
+visibility: private
+access_scope: individual
+security_severity: medium
+

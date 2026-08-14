@@ -1,0 +1,20 @@
+# policy id: trivy-docker-006
+# reason: enforce organization security control for docker, using Trivy, Exposed ports
+# severity: medium
+
+policy_id: TRIVY-DOCKER-006
+tool: Trivy
+category: docker
+sequence: 006
+title: Exposed ports
+description: Detect sensitive or unnecessary exposed ports/configuration where supported.
+severity: medium
+security_risk: Detect sensitive or unnecessary exposed ports/configuration where supported.
+remediation: Apply the approved organization remediation and rerun Trivy.
+organization_policy_reference: organization-security-policy
+implementation: Trivy built-in misconfiguration scan
+status: ACTIVE
+
+
+
+

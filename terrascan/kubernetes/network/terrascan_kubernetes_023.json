@@ -1,0 +1,11 @@
+﻿{
+    "template_args":  {
+                          "prefix":  ""
+                      },
+    "name":  "terrascan_kubernetes_023",
+    "resource_type":  "kubernetes_ingress",
+    "policy_type":  "kubernetes",
+    "description":  "Kubernetes ingress must configure TLS",
+    "severity":  "HIGH",
+    "file":  "terrascan_kubernetes_023.rego"
+}

@@ -1,0 +1,20 @@
+# policy id: semgrep-jenkins-003
+# reason: enforce organization security control for jenkins, using Semgrep, Groovy interpolation in shell commands can expose secrets
+# severity: medium
+
+rules:
+  - id: ORG-SEC-JENKINS-003
+    languages: [groovy]
+    message: Groovy interpolation in shell commands can expose secrets.
+    severity: ERROR
+    metadata:
+      organization_policy_id: SEC-JENKINS-003
+      severity_normalized: high
+      security_category: organization-security
+      remediation: Apply the approved organization remediation and rerun Semgrep.
+      technology: groovy
+    pattern: sh("${$X}")
+
+
+
+

@@ -1,0 +1,11 @@
+﻿{
+    "template_args":  {
+                          "prefix":  ""
+                      },
+    "name":  "terrascan_azure_017",
+    "resource_type":  "azurerm_key_vault",
+    "policy_type":  "azure",
+    "description":  "Key Vault must enable purge protection",
+    "severity":  "HIGH",
+    "file":  "terrascan_azure_017.rego"
+}

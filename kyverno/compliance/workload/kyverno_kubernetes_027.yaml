@@ -1,0 +1,31 @@
+# policy id: kyverno-kubernetes-027
+# reason: enforce organization security control for kubernetes, using Kyverno, Deployments must use rolling updates
+# severity: medium
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: kyverno-kubernetes-027-require-rolling-update
+  annotations:
+    policies.kyverno.io/title: Deployments must use rolling updates
+    policies.kyverno.io/category: compliance
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: Deployments must use rolling updates.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-rolling-update
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+      validate:
+        message: Deployments must use rolling updates.
+        pattern:
+          spec.strategy.type: RollingUpdate
+
+
+
+

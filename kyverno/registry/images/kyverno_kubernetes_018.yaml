@@ -1,0 +1,31 @@
+# policy id: kyverno-kubernetes-018
+# reason: enforce organization security control for kubernetes, using Kyverno, Images must come from the approved registry
+# severity: medium
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: kyverno-kubernetes-018-approved-image-registry
+  annotations:
+    policies.kyverno.io/title: Images must come from the approved registry
+    policies.kyverno.io/category: registry
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: Images must come from the approved registry.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: approved-image-registry
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: Images must come from the approved registry.
+        pattern:
+          spec.containers[*].image: 'registry.example.com/*'
+
+
+
+

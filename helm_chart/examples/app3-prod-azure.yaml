@@ -1,0 +1,5 @@
+application: {name: app3}
+environment: {name: prod}
+cloud: {provider: azure}
+replicaCount: 3
+image: {repository: <AZURE_ACR_REPOSITORY>, tag: "1.0.0"}

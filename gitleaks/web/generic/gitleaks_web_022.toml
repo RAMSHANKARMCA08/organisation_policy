@@ -1,0 +1,12 @@
+# policy id: gitleaks-web-022
+# reason: detect bearer token in repository content
+# severity: critical
+
+[[rules]]
+id = "gitleaks-web-022"
+description = "Bearer token"
+regex = '''(?i)authorization:\s*bearer\s+[A-Za-z0-9._~+/=-]{20,}'''
+secretGroup = 0
+keywords = ["bearer_token"]
+tags = ["secret", "web"]
+

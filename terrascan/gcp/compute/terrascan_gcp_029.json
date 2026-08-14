@@ -1,0 +1,11 @@
+﻿{
+    "template_args":  {
+                          "prefix":  ""
+                      },
+    "name":  "terrascan_gcp_029",
+    "resource_type":  "google_compute_firewall",
+    "policy_type":  "gcp",
+    "description":  "GCP firewalls must not expose SSH to the internet",
+    "severity":  "CRITICAL",
+    "file":  "terrascan_gcp_029.rego"
+}

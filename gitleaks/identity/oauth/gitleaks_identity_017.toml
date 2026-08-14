@@ -1,0 +1,12 @@
+# policy id: gitleaks-identity-017
+# reason: detect oauth client secret in repository content
+# severity: critical
+
+[[rules]]
+id = "gitleaks-identity-017"
+description = "OAuth client secret"
+regex = '''(?i)oauth[_-]?client[_-]?secret["' :=]+[A-Za-z0-9._~-]{16,}'''
+secretGroup = 0
+keywords = ["oauth_client_secret"]
+tags = ["secret", "identity"]
+

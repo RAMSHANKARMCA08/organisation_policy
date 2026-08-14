@@ -1,0 +1,31 @@
+# policy id: kyverno-kubernetes-002
+# reason: enforce organization security control for kubernetes, using Kyverno, Pods must define a runtime seccomp profile
+# severity: medium
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: kyverno-kubernetes-002-require-seccomp-profile
+  annotations:
+    policies.kyverno.io/title: Pods must define a runtime seccomp profile
+    policies.kyverno.io/category: podsecurity
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: Pods must define a runtime seccomp profile.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-seccomp-profile
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: Pods must define a runtime seccomp profile.
+        pattern:
+          spec.securityContext.seccompProfile.type: RuntimeDefault
+
+
+
+

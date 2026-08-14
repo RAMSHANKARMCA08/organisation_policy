@@ -1,0 +1,12 @@
+# policy id: gitleaks-cloud-027
+# reason: detect hashicorp vault token in repository content
+# severity: critical
+
+[[rules]]
+id = "gitleaks-cloud-027"
+description = "HashiCorp Vault token"
+regex = '''hvs\.[A-Za-z0-9_-]{20,}'''
+secretGroup = 0
+keywords = ["vault_token"]
+tags = ["secret", "cloud"]
+

@@ -1,0 +1,20 @@
+# policy id: trivy-docker-004
+# reason: enforce organization security control for docker, using Trivy, Insecure container settings
+# severity: medium
+
+policy_id: TRIVY-DOCKER-004
+tool: Trivy
+category: docker
+sequence: 004
+title: Insecure container settings
+description: Detect insecure container configuration or security settings.
+severity: high
+security_risk: Detect insecure container configuration or security settings.
+remediation: Apply the approved organization remediation and rerun Trivy.
+organization_policy_reference: organization-security-policy
+implementation: Trivy built-in misconfiguration scan
+status: ACTIVE
+
+
+
+

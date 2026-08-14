@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["name", "project", "point_of_contact_1", "point_of_contact_2", "visibility", "access_scope", "security_severity"],
+  "properties": {
+    "name": {"type": "string", "pattern": "^[A-Za-z0-9._-]+$"},
+    "project": {"type": "string", "minLength": 2},
+    "point_of_contact_1": {"type": "string", "minLength": 3},
+    "point_of_contact_2": {"type": "string", "minLength": 3},
+    "visibility": {"enum": ["public", "private"]},
+    "access_scope": {"enum": ["individual", "team", "organization"]},
+    "security_severity": {"enum": ["critical", "high", "medium", "low", "info"]}
+  }
+}

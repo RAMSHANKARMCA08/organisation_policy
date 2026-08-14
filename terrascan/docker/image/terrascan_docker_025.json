@@ -1,0 +1,11 @@
+﻿{
+    "template_args":  {
+                          "prefix":  ""
+                      },
+    "name":  "terrascan_docker_025",
+    "resource_type":  "docker_image",
+    "policy_type":  "docker",
+    "description":  "Docker images must use approved immutable tags",
+    "severity":  "HIGH",
+    "file":  "terrascan_docker_025.rego"
+}

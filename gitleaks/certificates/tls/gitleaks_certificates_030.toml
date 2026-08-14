@@ -1,0 +1,12 @@
+# policy id: gitleaks-certificates-030
+# reason: detect encrypted private key in repository content
+# severity: critical
+
+[[rules]]
+id = "gitleaks-certificates-030"
+description = "Encrypted private key"
+regex = '''-----BEGIN ENCRYPTED PRIVATE KEY-----'''
+secretGroup = 0
+keywords = ["certificate_private_key"]
+tags = ["secret", "certificates"]
+

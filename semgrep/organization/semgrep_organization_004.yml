@@ -1,0 +1,20 @@
+# policy id: semgrep-organization-004
+# reason: enforce organization security control for organization, using Semgrep, Kubernetes workloads must not be privileged
+# severity: medium
+
+rules:
+  - id: ORG-SEC-ORGANIZATION-004
+    languages: [yaml]
+    message: Kubernetes workloads must not be privileged.
+    severity: ERROR
+    metadata:
+      organization_policy_id: SEC-ORGANIZATION-004
+      severity_normalized: critical
+      security_category: organization-security
+      remediation: Apply the approved organization remediation and rerun Semgrep.
+      technology: yaml
+    pattern-regex: '(?i)privileged\\s*:\\s*true'
+
+
+
+

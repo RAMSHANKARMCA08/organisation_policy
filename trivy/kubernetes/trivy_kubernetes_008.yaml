@@ -1,0 +1,20 @@
+# policy id: trivy-kubernetes-008
+# reason: enforce organization security control for kubernetes, using Trivy, Resource configuration
+# severity: medium
+
+policy_id: TRIVY-KUBERNETES-008
+tool: Trivy
+category: kubernetes
+sequence: 008
+title: Resource configuration
+description: Require appropriate CPU and memory resources.
+severity: medium
+security_risk: Require appropriate CPU and memory resources.
+remediation: Apply the approved organization remediation and rerun Trivy.
+organization_policy_reference: organization-security-policy
+implementation: Trivy built-in misconfiguration scan
+status: ACTIVE
+
+
+
+

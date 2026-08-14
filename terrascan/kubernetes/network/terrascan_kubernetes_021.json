@@ -1,0 +1,11 @@
+﻿{
+    "template_args":  {
+                          "prefix":  ""
+                      },
+    "name":  "terrascan_kubernetes_021",
+    "resource_type":  "kubernetes_service",
+    "policy_type":  "kubernetes",
+    "description":  "Kubernetes services should not use unrestricted LoadBalancer exposure",
+    "severity":  "HIGH",
+    "file":  "terrascan_kubernetes_021.rego"
+}

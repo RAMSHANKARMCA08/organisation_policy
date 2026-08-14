@@ -1,0 +1,12 @@
+# policy id: gitleaks-ci-cd-010
+# reason: detect ci secret in repository content
+# severity: critical
+
+[[rules]]
+id = "gitleaks-ci-cd-010"
+description = "CI secret"
+regex = '''(?i)(ci|build|deploy)[_-]?(secret|token|password)["' :=]+[^\s"']{12,}'''
+secretGroup = 0
+keywords = ["ci_secret"]
+tags = ["secret", "ci-cd"]
+

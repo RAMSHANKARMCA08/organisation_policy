@@ -1,0 +1,20 @@
+# policy id: semgrep-shell-003
+# reason: enforce organization security control for shell, using Semgrep, Piping content directly to Bash is unsafe
+# severity: medium
+
+rules:
+  - id: ORG-SEC-SHELL-003
+    languages: [bash]
+    message: Piping content directly to Bash is unsafe.
+    severity: ERROR
+    metadata:
+      organization_policy_id: SEC-SHELL-003
+      severity_normalized: high
+      security_category: organization-security
+      remediation: Apply the approved organization remediation and rerun Semgrep.
+      technology: bash
+    pattern: $CMD | bash
+
+
+
+

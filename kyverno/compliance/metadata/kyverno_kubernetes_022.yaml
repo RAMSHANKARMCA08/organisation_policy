@@ -1,0 +1,31 @@
+# policy id: kyverno-kubernetes-022
+# reason: enforce organization security control for kubernetes, using Kyverno, Resources must include a lowercase project label
+# severity: medium
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: kyverno-kubernetes-022-require-project-label
+  annotations:
+    policies.kyverno.io/title: Resources must include a lowercase project label
+    policies.kyverno.io/category: compliance
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: Resources must include a lowercase project label.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-project-label
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+      validate:
+        message: Resources must include a lowercase project label.
+        pattern:
+          metadata.labels.project: '[a-z0-9-]*'
+
+
+
+

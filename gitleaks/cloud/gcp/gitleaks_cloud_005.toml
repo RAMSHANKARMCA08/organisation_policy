@@ -1,0 +1,12 @@
+# policy id: gitleaks-cloud-005
+# reason: detect gcp service account key in repository content
+# severity: critical
+
+[[rules]]
+id = "gitleaks-cloud-005"
+description = "GCP service account key"
+regex = '''"private_key"\s*:\s*"-----BEGIN PRIVATE KEY-----'''
+secretGroup = 0
+keywords = ["gcp_service_account"]
+tags = ["secret", "cloud"]
+

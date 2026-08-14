@@ -1,0 +1,10 @@
+name: data-lake-ingestion
+project: data-platform
+point_of_contact_1: data-owner@example.com
+point_of_contact_2: data-backup@example.com
+
+
+visibility: private
+access_scope: individual
+security_severity: medium
+

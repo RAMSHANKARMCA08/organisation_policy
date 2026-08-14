@@ -1,0 +1,12 @@
+# policy id: gitleaks-web-023
+# reason: detect generic api key in repository content
+# severity: critical
+
+[[rules]]
+id = "gitleaks-web-023"
+description = "Generic API key"
+regex = '''(?i)(api[_-]?key|apikey)["' :=]+[A-Za-z0-9._~-]{16,}'''
+secretGroup = 0
+keywords = ["api_key"]
+tags = ["secret", "web"]
+

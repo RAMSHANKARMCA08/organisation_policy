@@ -1,0 +1,31 @@
+# policy id: kyverno-kubernetes-014
+# reason: enforce organization security control for kubernetes, using Kyverno, Pods must not expose host ports
+# severity: medium
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: kyverno-kubernetes-014-deny-host-ports
+  annotations:
+    policies.kyverno.io/title: Pods must not expose host ports
+    policies.kyverno.io/category: network
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: Pods must not expose host ports.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: deny-host-ports
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: Pods must not expose host ports.
+        pattern:
+          spec.containers[*].ports[*].hostPort: null
+
+
+
+

@@ -1,0 +1,11 @@
+﻿{
+    "template_args":  {
+                          "prefix":  ""
+                      },
+    "name":  "terrascan_aws_008",
+    "resource_type":  "aws_db_instance",
+    "policy_type":  "aws",
+    "description":  "RDS instances must not be publicly accessible",
+    "severity":  "CRITICAL",
+    "file":  "terrascan_aws_008.rego"
+}

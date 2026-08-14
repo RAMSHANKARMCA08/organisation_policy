@@ -1,0 +1,20 @@
+# policy id: semgrep-jenkins-002
+# reason: enforce organization security control for jenkins, using Semgrep, Jenkins must not print secret variables
+# severity: medium
+
+rules:
+  - id: ORG-SEC-JENKINS-002
+    languages: [groovy]
+    message: Jenkins must not print secret variables.
+    severity: ERROR
+    metadata:
+      organization_policy_id: SEC-JENKINS-002
+      severity_normalized: high
+      security_category: organization-security
+      remediation: Apply the approved organization remediation and rerun Semgrep.
+      technology: groovy
+    pattern-regex: '(?i)(echo|println|print).*\\b(PASSWORD|TOKEN|SECRET)\\b'
+
+
+
+

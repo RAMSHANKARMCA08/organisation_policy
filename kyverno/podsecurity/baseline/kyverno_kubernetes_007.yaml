@@ -1,0 +1,31 @@
+# policy id: kyverno-kubernetes-007
+# reason: enforce organization security control for kubernetes, using Kyverno, Pods must not share host IPC
+# severity: medium
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: kyverno-kubernetes-007-restrict-host-ipc
+  annotations:
+    policies.kyverno.io/title: Pods must not share host IPC
+    policies.kyverno.io/category: podsecurity
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: Pods must not share host IPC.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: restrict-host-ipc
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: Pods must not share host IPC.
+        pattern:
+          spec.hostIPC: false
+
+
+
+

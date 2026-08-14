@@ -1,0 +1,11 @@
+﻿{
+    "template_args":  {
+                          "prefix":  ""
+                      },
+    "name":  "terrascan_aws_012",
+    "resource_type":  "aws_cloudtrail",
+    "policy_type":  "aws",
+    "description":  "CloudTrail must be multi-region",
+    "severity":  "HIGH",
+    "file":  "terrascan_aws_012.rego"
+}

@@ -1,0 +1,31 @@
+# policy id: kyverno-kubernetes-016
+# reason: enforce organization security control for kubernetes, using Kyverno, LoadBalancer services require approved internal annotation
+# severity: medium
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: kyverno-kubernetes-016-restrict-public-loadbalancer
+  annotations:
+    policies.kyverno.io/title: LoadBalancer services require approved internal annotation
+    policies.kyverno.io/category: network
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: LoadBalancer services require approved internal annotation.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: restrict-public-loadbalancer
+      match:
+        any:
+          - resources:
+              kinds:
+                - Service
+      validate:
+        message: LoadBalancer services require approved internal annotation.
+        pattern:
+          metadata.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-internal: 'true'
+
+
+
+

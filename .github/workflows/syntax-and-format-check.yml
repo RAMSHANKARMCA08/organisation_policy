@@ -1,0 +1,114 @@
+name: syntax-and-format-check
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout commit
+        uses: actions/checkout@v4
+
+      - name: Load approved tool versions
+        run: cat config/tool-versions.env >> "$GITHUB_ENV"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install validation tools
+        run: |
+          # Python syntax and formatting checks.
+          python -m pip install --disable-pip-version-check ruff yamllint
+
+          # Shell syntax and formatting checks.
+          sudo apt-get update
+          sudo apt-get install --yes shellcheck shfmt
+
+          # Checkov: scan infrastructure-as-code files.
+          python -m pip install --disable-pip-version-check "checkov==${CHECKOV_VERSION}"
+
+          # Gitleaks: scan repository content for secrets.
+          curl --fail --location --silent --show-error "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" -o gitleaks.tar.gz
+          tar -xzf gitleaks.tar.gz gitleaks
+          sudo install gitleaks /usr/local/bin/gitleaks
+
+      - name: Validate Python syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(find . -type f -name '*.py' -not -path './.git/*')
+          if ((${#files[@]})); then
+            python -m compileall -q "${files[@]}"
+            ruff check --select E9,F "${files[@]}"
+          else
+            echo 'No Python files detected.'
+          fi
+
+      - name: Check Python beautification without changing files
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruff format --check --diff .
+
+      - name: Validate YAML syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(find . -type f \( -name '*.yml' -o -name '*.yaml' \) -not -path './.git/*')
+          if ((${#files[@]})); then
+            yamllint -d relaxed "${files[@]}"
+          else
+            echo 'No YAML files detected.'
+          fi
+
+      - name: Validate shell syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(find . -type f \( -name '*.sh' -o -name '*.bash' \) -not -path './.git/*')
+          if ((${#files[@]})); then
+            for file in "${files[@]}"; do
+              bash -n "$file"
+            done
+            shellcheck --severity=warning "${files[@]}"
+          else
+            echo 'No shell files detected.'
+          fi
+
+      - name: Check shell beautification without changing files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(find . -type f \( -name '*.sh' -o -name '*.bash' \) -not -path './.git/*')
+          if ((${#files[@]})); then
+            shfmt -d -i 2 -ci "${files[@]}"
+          else
+            echo 'No shell files detected.'
+          fi
+
+      - name: Validate policy IDs, exceptions, and severity gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/validate_security_controls.py
+
+      - name: Validate policy governance and ownership
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/governance_check.py
+
+      - name: Scan repository secrets and IaC
+        shell: bash
+        run: |
+          set -euo pipefail
+          gitleaks detect --source . --config gitleaks/config/gitleaks.toml --no-banner
+          checkov -d . --quiet
+

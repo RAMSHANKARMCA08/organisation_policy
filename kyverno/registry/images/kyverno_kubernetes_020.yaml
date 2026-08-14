@@ -1,0 +1,31 @@
+# policy id: kyverno-kubernetes-020
+# reason: enforce organization security control for kubernetes, using Kyverno, ensure no latest image is used
+# severity: high
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: kyverno-kubernetes-020-disallow-latest-tag
+  annotations:
+    policies.kyverno.io/title: Images must not use the latest tag
+    policies.kyverno.io/category: registry
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: Images must not use the latest tag.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: disallow-latest-tag
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: Images must not use the latest tag.
+        pattern:
+          spec.containers[*].image: '!*:latest'
+
+
+
+

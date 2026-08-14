@@ -1,0 +1,6 @@
+tool: semgrep
+owner: application-security
+backup_owner: platform-security
+review_frequency: quarterly
+escalation: security-oncall@example.com
+deprecation: mark deprecated and retain the permanent policy ID

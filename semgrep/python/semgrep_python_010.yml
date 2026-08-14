@@ -1,0 +1,20 @@
+# policy id: semgrep-python-010
+# reason: enforce organization security control for python, using Semgrep, Unsafe YAML loading may construct objects
+# severity: medium
+
+rules:
+  - id: ORG-SEC-PYTHON-010
+    languages: [python]
+    message: Unsafe YAML loading may construct objects.
+    severity: ERROR
+    metadata:
+      organization_policy_id: SEC-PYTHON-010
+      severity_normalized: high
+      security_category: organization-security
+      remediation: Apply the approved organization remediation and rerun Semgrep.
+      technology: python
+    pattern: yaml.load(...)
+
+
+
+

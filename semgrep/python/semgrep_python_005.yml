@@ -1,0 +1,20 @@
+# policy id: semgrep-python-005
+# reason: enforce organization security control for python, using Semgrep, Disabled TLS verification enables interception
+# severity: medium
+
+rules:
+  - id: ORG-SEC-PYTHON-005
+    languages: [python]
+    message: Disabled TLS verification enables interception.
+    severity: ERROR
+    metadata:
+      organization_policy_id: SEC-PYTHON-005
+      severity_normalized: high
+      security_category: organization-security
+      remediation: Apply the approved organization remediation and rerun Semgrep.
+      technology: python
+    pattern: requests.$M(..., verify=False, ...)
+
+
+
+

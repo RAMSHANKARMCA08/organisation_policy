@@ -1,0 +1,8 @@
+application: {name: app1}
+environment: {name: dev}
+cloud:
+  provider: aws
+  aws:
+    serviceAccountAnnotations: {eks.amazonaws.com/role-arn: ""}
+replicaCount: 1
+image: {repository: <AWS_ECR_REPOSITORY>, tag: "1.0.0"}

@@ -1,0 +1,12 @@
+# policy id: gitleaks-containers-025
+# reason: detect container registry password in repository content
+# severity: critical
+
+[[rules]]
+id = "gitleaks-containers-025"
+description = "Container registry password"
+regex = '''(?i)(docker|container)[_-]?registry[_-]?(password|token)["' :=]+[^\s"']{8,}'''
+secretGroup = 0
+keywords = ["registry_password"]
+tags = ["secret", "containers"]
+

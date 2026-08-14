@@ -1,0 +1,31 @@
+# policy id: kyverno-kubernetes-013
+# reason: enforce organization security control for kubernetes, using Kyverno, Namespaces must have a NetworkPolicy
+# severity: medium
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: kyverno-kubernetes-013-require-network-policy
+  annotations:
+    policies.kyverno.io/title: Namespaces must have a NetworkPolicy
+    policies.kyverno.io/category: network
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: Namespaces must have a NetworkPolicy.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-network-policy
+      match:
+        any:
+          - resources:
+              kinds:
+                - NetworkPolicy
+      validate:
+        message: Namespaces must have a NetworkPolicy.
+        pattern:
+          metadata.namespace: '?*'
+
+
+
+

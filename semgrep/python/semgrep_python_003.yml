@@ -1,0 +1,20 @@
+# policy id: semgrep-python-003
+# reason: enforce organization security control for python, using Semgrep, Shell execution with dynamic input can enable command injection
+# severity: medium
+
+rules:
+  - id: ORG-SEC-PYTHON-003
+    languages: [python]
+    message: Shell execution with dynamic input can enable command injection.
+    severity: ERROR
+    metadata:
+      organization_policy_id: SEC-PYTHON-003
+      severity_normalized: high
+      security_category: organization-security
+      remediation: Apply the approved organization remediation and rerun Semgrep.
+      technology: python
+    pattern: subprocess.$F(..., shell=True, ...)
+
+
+
+

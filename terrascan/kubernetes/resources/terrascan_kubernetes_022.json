@@ -1,0 +1,11 @@
+﻿{
+    "template_args":  {
+                          "prefix":  ""
+                      },
+    "name":  "terrascan_kubernetes_022",
+    "resource_type":  "kubernetes_deployment",
+    "policy_type":  "kubernetes",
+    "description":  "Kubernetes deployments must define resource limits",
+    "severity":  "MEDIUM",
+    "file":  "terrascan_kubernetes_022.rego"
+}

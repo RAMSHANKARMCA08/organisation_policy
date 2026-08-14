@@ -1,0 +1,11 @@
+﻿{
+    "template_args":  {
+                          "prefix":  ""
+                      },
+    "name":  "terrascan_azure_014",
+    "resource_type":  "azurerm_storage_account",
+    "policy_type":  "azure",
+    "description":  "Azure storage must disable public access",
+    "severity":  "HIGH",
+    "file":  "terrascan_azure_014.rego"
+}

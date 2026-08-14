@@ -1,0 +1,31 @@
+# policy id: kyverno-kubernetes-026
+# reason: enforce organization security control for kubernetes, using Kyverno, Deployments must run at least three replicas
+# severity: medium
+
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: kyverno-kubernetes-026-require-replicas
+  annotations:
+    policies.kyverno.io/title: Deployments must run at least three replicas
+    policies.kyverno.io/category: compliance
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: Deployments must run at least three replicas.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-replicas
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+      validate:
+        message: Deployments must run at least three replicas.
+        pattern:
+          spec.replicas: '>=(3)'
+
+
+
+

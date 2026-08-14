@@ -1,0 +1,20 @@
+# policy id: semgrep-shell-004
+# reason: enforce organization security control for shell, using Semgrep, World-writable permissions are unsafe
+# severity: medium
+
+rules:
+  - id: ORG-SEC-SHELL-004
+    languages: [bash]
+    message: World-writable permissions are unsafe.
+    severity: ERROR
+    metadata:
+      organization_policy_id: SEC-SHELL-004
+      severity_normalized: high
+      security_category: organization-security
+      remediation: Apply the approved organization remediation and rerun Semgrep.
+      technology: bash
+    pattern: chmod 777 $FILE
+
+
+
+

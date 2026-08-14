@@ -1,0 +1,12 @@
+# policy id: gitleaks-cloud-004
+# reason: detect azure storage key in repository content
+# severity: critical
+
+[[rules]]
+id = "gitleaks-cloud-004"
+description = "Azure storage key"
+regex = '''(?i)azure[_-]?storage[_-]?account[_-]?key["' :=]+[A-Za-z0-9+/=]{40,}'''
+secretGroup = 0
+keywords = ["azure_storage_key"]
+tags = ["secret", "cloud"]
+

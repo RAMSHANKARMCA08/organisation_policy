@@ -1,0 +1,20 @@
+# policy id: semgrep-jenkins-005
+# reason: enforce organization security control for jenkins, using Semgrep, Security stages must not be skipped or disabled
+# severity: medium
+
+rules:
+  - id: ORG-SEC-JENKINS-005
+    languages: [groovy]
+    message: Security stages must not be skipped or disabled.
+    severity: ERROR
+    metadata:
+      organization_policy_id: SEC-JENKINS-005
+      severity_normalized: high
+      security_category: organization-security
+      remediation: Apply the approved organization remediation and rerun Semgrep.
+      technology: groovy
+    pattern-regex: '(?i)(skip|disable).*security|security.*(skip|disable)'
+
+
+
+

@@ -1,0 +1,11 @@
+﻿{
+    "template_args":  {
+                          "prefix":  ""
+                      },
+    "name":  "terrascan_aws_002",
+    "resource_type":  "aws_s3_bucket",
+    "policy_type":  "aws",
+    "description":  "S3 buckets must enable versioning",
+    "severity":  "HIGH",
+    "file":  "terrascan_aws_002.rego"
+}

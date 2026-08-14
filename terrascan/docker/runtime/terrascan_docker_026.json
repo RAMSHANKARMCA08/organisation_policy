@@ -1,0 +1,11 @@
+﻿{
+    "template_args":  {
+                          "prefix":  ""
+                      },
+    "name":  "terrascan_docker_026",
+    "resource_type":  "docker_container",
+    "policy_type":  "docker",
+    "description":  "Docker containers must not run privileged",
+    "severity":  "CRITICAL",
+    "file":  "terrascan_docker_026.rego"
+}
