@@ -67,8 +67,9 @@ jobs:
 
           # Gitleaks: scan repository files and Git history for secrets.
           curl --fail --location --silent --show-error "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" -o gitleaks.tar.gz
-          tar -xzf gitleaks.tar.gz gitleaks
-          sudo install gitleaks /usr/local/bin/gitleaks
+          mkdir -p "$RUNNER_TEMP/gitleaks-bin"
+          tar -xzf gitleaks.tar.gz -C "$RUNNER_TEMP/gitleaks-bin" gitleaks
+          sudo install "$RUNNER_TEMP/gitleaks-bin/gitleaks" /usr/local/bin/gitleaks
 
           # Python security tools are installed from the pinned requirements file.
           python -m pip install --disable-pip-version-check -r requirements-ci.txt
@@ -88,8 +89,9 @@ jobs:
 
           # Terrascan: scan Terraform and other infrastructure-as-code resources.
           curl --fail --location --silent --show-error https://github.com/tenable/terrascan/releases/download/v1.19.9/terrascan_1.19.9_Linux_x86_64.tar.gz -o terrascan.tar.gz
-          tar -xzf terrascan.tar.gz terrascan
-          sudo install terrascan /usr/local/bin/terrascan
+          mkdir -p "$RUNNER_TEMP/terrascan-bin"
+          tar -xzf terrascan.tar.gz -C "$RUNNER_TEMP/terrascan-bin" terrascan
+          sudo install "$RUNNER_TEMP/terrascan-bin/terrascan" /usr/local/bin/terrascan
 
           # TFLint: lint Terraform syntax, providers, deprecated attributes, and configuration.
           curl --fail --location --silent --show-error https://github.com/terraform-linters/tflint/releases/download/v0.55.1/tflint_linux_amd64.zip -o tflint.zip
@@ -98,8 +100,9 @@ jobs:
 
           # Kyverno CLI: validate Kubernetes manifests and rendered Helm resources.
           curl --fail --location --silent --show-error https://github.com/kyverno/kyverno/releases/download/v1.14.4/kyverno-cli-linux-amd64.tar.gz -o kyverno.tar.gz
-          tar -xzf kyverno.tar.gz kyverno
-          sudo install kyverno /usr/local/bin/kyverno
+          mkdir -p "$RUNNER_TEMP/kyverno-bin"
+          tar -xzf kyverno.tar.gz -C "$RUNNER_TEMP/kyverno-bin" kyverno
+          sudo install "$RUNNER_TEMP/kyverno-bin/kyverno" /usr/local/bin/kyverno
 
           # Hadolint: lint Dockerfiles for secure and maintainable image builds.
           curl --fail --location --silent --show-error https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint-Linux-x86_64 -o hadolint
