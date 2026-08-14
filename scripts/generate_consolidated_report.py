@@ -396,17 +396,17 @@ def main() -> int:
         "h1{color:#1d4ed8}table{border-collapse:collapse;width:100%;margin-bottom:24px}"
         "th{background:#1d4ed8;color:white;text-align:left}th,td{border:1px solid #cbd5e1;padding:8px}"
         "tr:nth-child(even){background:#f1f5f9}</style></head><body>"
-        f"<h1>Organization DevSecOps report</h1><p>Generated {html.escape(datetime.now(timezone.utc).isoformat())}</p><h2>Severity distribution</h2><img src='severity-pie.png' width='220' height='220' alt='Severity distribution pie chart'><ul style='list-style:none;padding:0'>"
+        f"<h1>Organization DevSecOps report</h1><p>Generated {html.escape(datetime.now(timezone.utc).isoformat())}</p><table role='presentation' style='width:100%;border:0;border-collapse:collapse'><tr><td style='width:50%;border:0;vertical-align:top;padding:8px'><h2>Severity distribution</h2><img src='severity-pie.png' width='220' height='220' alt='Severity distribution pie chart'><ul style='list-style:none;padding:0'>"
         + "".join(
             f"<li><span style='display:inline-block;width:12px;height:12px;background:{colors[s]};margin-right:8px'></span><b>{s.title()}</b>: {severity_counts[s]}</li>"
             for s in SEVERITIES
         )
-        + "</ul><h2>Findings by repository</h2><img src='repository-pie.png' width='220' height='220' alt='Findings by repository pie chart'><ul style='list-style:none;padding:0'>"
+        + "</ul></td><td style='width:50%;border:0;vertical-align:top;padding:8px'><h2>Findings by repository</h2><img src='repository-pie.png' width='220' height='220' alt='Findings by repository pie chart'><ul style='list-style:none;padding:0'>"
         + "".join(
             f"<li><span style='display:inline-block;width:12px;height:12px;background:{repository_colors[repo]};margin-right:8px'></span><b>{html.escape(repo)}</b>: {repository_totals[repo]}</li>"
             for repo in repository_labels
         )
-        + f"</ul><h2>Critical and high findings by repository</h2><table border='1' cellpadding='6'><tr><th>Repository</th><th>Critical</th><th>High</th></tr>{repo_html}</table><h2>Exceptions expiring in the next 30 days</h2><table border='1' cellpadding='6'><tr><th>Repository</th><th>Policy ID</th><th>Reason</th><th>Valid till</th><th>Days remaining</th></tr>{expiry_html}</table><h2>Findings</h2><table border='1' cellpadding='6'><tr><th>S.No</th><th>Repository</th><th>Scanner</th><th>Policy ID</th><th>Priority</th><th>Details</th></tr>{html_rows or '<tr><td colspan=6>All scanned repositories passed.</td></tr>'}</table><h2>Repository scan exceptions</h2><table border='1' cellpadding='6'><tr><th>S.No</th><th>Repository</th><th>Project</th><th>Primary contact</th><th>Backup contact</th><th>Visibility</th><th>Access</th><th>Severity</th><th>Reason</th><th>Approved by</th><th>Valid till</th></tr>{repository_exception_html}</table></body></html>"
+        + f"</ul></td></tr></table><h2>Critical and high findings by repository</h2><table border='1' cellpadding='6'><tr><th>Repository</th><th>Critical</th><th>High</th></tr>{repo_html}</table><h2>Exceptions expiring in the next 30 days</h2><table border='1' cellpadding='6'><tr><th>Repository</th><th>Policy ID</th><th>Reason</th><th>Valid till</th><th>Days remaining</th></tr>{expiry_html}</table><h2>Findings</h2><table border='1' cellpadding='6'><tr><th>S.No</th><th>Repository</th><th>Scanner</th><th>Policy ID</th><th>Priority</th><th>Details</th></tr>{html_rows or '<tr><td colspan=6>All scanned repositories passed.</td></tr>'}</table><h2>Repository scan exceptions</h2><table border='1' cellpadding='6'><tr><th>S.No</th><th>Repository</th><th>Project</th><th>Primary contact</th><th>Backup contact</th><th>Visibility</th><th>Access</th><th>Severity</th><th>Reason</th><th>Approved by</th><th>Valid till</th></tr>{repository_exception_html}</table></body></html>"
     )
     (args.output / "organization-consolidated.html").write_text(
         document, encoding="utf-8"

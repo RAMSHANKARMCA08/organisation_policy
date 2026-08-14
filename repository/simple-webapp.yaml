@@ -1,0 +1,10 @@
+name: simple-webapp
+project: simple-webapp
+point_of_contact_1: ramshankar.mca08@gmail.com
+point_of_contact_2: ramshankar.mca08@gmail.com
+
+
+visibility: private
+access_scope: individual
+security_severity: medium
+

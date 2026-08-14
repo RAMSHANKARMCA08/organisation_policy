@@ -75,7 +75,6 @@ jobs:
 
   DiscoverRepositories:
     name: Discover repositories / Build dynamic matrix
-    needs: Install
     runs-on: ubuntu-latest
     outputs:
       repositories: ${{ steps.matrix.outputs.repositories }}
