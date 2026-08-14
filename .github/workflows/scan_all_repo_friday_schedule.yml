@@ -4,7 +4,6 @@ on:
   workflow_dispatch:
   # Automatic triggers are disabled. Uncomment to restore them.
   # schedule:
-  #   # Friday 22:00 UTC. GitHub schedules use UTC.
   #   - cron: '0 22 * * 5'
   # push:
   #   branches: [master]
@@ -13,238 +12,235 @@ permissions:
   contents: read
 
 jobs:
-  ListRepositories:
-    name: Stage 1 - Select repositories
-    # if: github.ref == 'refs/heads/master' || github.event_name == 'schedule'
+  Install:
+    name: Install / ${{ matrix.tool }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        tool:
+          - checkov
+          - trivy
+          - semgrep
+          - gitleaks
+          - tflint
+          - kyverno
+          - terrascan
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout commit
+        uses: actions/checkout@v5
 
-      - name: Load approved tool versions
-        run: grep -E '^[A-Za-z_][A-Za-z0-9_]*=.*$' config/tool-versions.env >> "$GITHUB_ENV"
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
 
-      - name: Get, filter, and print repository names
-        id: discover
+      - name: Install ${{ matrix.tool }}
+        id: install
         continue-on-error: true
-        env:
-          GH_TOKEN: ${{ secrets.ORGANIZATION_REPO_TOKEN }}
-          GITHUB_ORG: ${{ vars.ORGANIZATION_NAME }}
-        run: bash scripts/get-repository-list.sh repository-names.txt repository/scan-exceptions.txt repository/discovered-repositories.yaml
+        run: |
+          mkdir -p install-status
+          set -o pipefail
+          bash scripts/install-security-tool.sh \
+            "${{ matrix.tool }}" \
+            config/tool-versions.env \
+            "installed-tools/${{ matrix.tool }}" \
+            2>&1 | tee "install-status/${{ matrix.tool }}.log"
 
-      - name: Record repository discovery status
+      - name: Record installation result
         if: always()
         env:
-          DISCOVERY_OUTCOME: ${{ steps.discover.outcome }}
+          INSTALL_OUTCOME: ${{ steps.install.outcome }}
         run: |
-          touch repository-names.txt
-          mkdir -p repository
-          touch repository/discovered-repositories.yaml
-          printf 'repository_discovery=%s\n' "$DISCOVERY_OUTCOME" > discovery-status.txt
+          mkdir -p install-status
+          printf 'install_%s=%s\n' \
+            "${{ matrix.tool }}" "$INSTALL_OUTCOME" \
+            >"install-status/${{ matrix.tool }}.txt"
 
-      - name: Publish reusable repository list
+      - name: Publish installed tool
+        if: steps.install.outcome == 'success'
+        uses: actions/upload-artifact@v7
+        with:
+          name: installed-tool-${{ matrix.tool }}
+          path: installed-tools/${{ matrix.tool }}
+          retention-days: 1
+
+      - name: Publish installation result
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: repository-scan-input
-          path: |
-            repository-names.txt
-            repository/discovered-repositories.yaml
-            discovery-status.txt
+          name: install-status-${{ matrix.tool }}
+          path: install-status
           retention-days: 7
 
-  ScanRepositories:
-    name: Stage 2 - Scan and build reports
-    needs: ListRepositories
-    # if: github.ref == 'refs/heads/master' || github.event_name == 'schedule'
+  Scan:
+    name: Scan / ${{ matrix.tool }}
+    needs: Install
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        tool:
+          - checkov
+          - trivy
+          - semgrep
+          - gitleaks
+          - tflint
+          - kyverno
+          - terrascan
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout commit
+        uses: actions/checkout@v5
 
-      - name: Download reusable repository list
-        id: download-input
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Download installed ${{ matrix.tool }}
         continue-on-error: true
         uses: actions/download-artifact@v8
         with:
-          name: repository-scan-input
-          path: .
+          name: installed-tool-${{ matrix.tool }}
+          path: installed-tools/${{ matrix.tool }}
 
-      - name: Load approved tool versions
-        run: grep -E '^[A-Za-z_][A-Za-z0-9_]*=.*$' config/tool-versions.env >> "$GITHUB_ENV"
-
-      - name: Install scanners
-        id: terraform-install
-        continue-on-error: true
-        uses: hashicorp/setup-terraform@v4
-        with:
-          terraform_version: ${{ env.TERRAFORM_VERSION }}
-
-      - name: Install Python validation dependencies
-        id: scanner-install
-        continue-on-error: true
-        shell: bash
+      - name: Select repositories from the approved inventory
+        env:
+          GH_TOKEN: ${{ secrets.ORGANIZATION_REPO_TOKEN }}
+          GITHUB_ORG: ${{ vars.ORGANIZATION_NAME }}
         run: |
-          set +e
-          status=0
+          bash scripts/get-repository-list.sh \
+            repository-names.txt \
+            repository/scan-exceptions.txt \
+            repository/discovered-repositories.yaml
 
-          python -m pip install --disable-pip-version-check -r requirements-ci.txt || status=1
-
-          # Gitleaks: scan repository files and Git history for secrets.
-          (
-            curl --fail --location --silent --show-error "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" -o gitleaks.tar.gz &&
-            mkdir -p "$RUNNER_TEMP/gitleaks-bin" &&
-            tar -xzf gitleaks.tar.gz -C "$RUNNER_TEMP/gitleaks-bin" gitleaks &&
-            sudo install "$RUNNER_TEMP/gitleaks-bin/gitleaks" /usr/local/bin/gitleaks
-          ) || status=1
-
-          # ShellCheck: scan shell scripts for unsafe syntax and security defects.
-          (sudo apt-get update && sudo apt-get install --yes shellcheck) || status=1
-
-          # Trivy: scan filesystems, Dockerfiles, images, dependencies, and IaC.
-          (
-            curl --fail --location --silent --show-error https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh -o trivy-install.sh &&
-            sudo sh trivy-install.sh -b /usr/local/bin
-          ) || status=1
-
-          # Conftest/OPA: evaluate organization Rego policies against repository content.
-          (
-            curl --fail --location --silent --show-error https://github.com/open-policy-agent/conftest/releases/download/v0.56.0/conftest_0.56.0_Linux_x86_64.tar.gz -o conftest.tar.gz &&
-            tar -xzf conftest.tar.gz conftest &&
-            sudo install conftest /usr/local/bin/conftest
-          ) || status=1
-
-          # Terrascan: scan Terraform and other infrastructure-as-code resources.
-          (
-            curl --fail --location --silent --show-error https://github.com/tenable/terrascan/releases/download/v1.19.9/terrascan_1.19.9_Linux_x86_64.tar.gz -o terrascan.tar.gz &&
-            mkdir -p "$RUNNER_TEMP/terrascan-bin" &&
-            tar -xzf terrascan.tar.gz -C "$RUNNER_TEMP/terrascan-bin" terrascan &&
-            sudo install "$RUNNER_TEMP/terrascan-bin/terrascan" /usr/local/bin/terrascan
-          ) || status=1
-
-          # TFLint: lint Terraform syntax, providers, deprecated attributes, and configuration.
-          (
-            curl --fail --location --silent --show-error https://github.com/terraform-linters/tflint/releases/download/v0.55.1/tflint_linux_amd64.zip -o tflint.zip &&
-            unzip -q tflint.zip -d "$RUNNER_TEMP/tflint-bin" &&
-            sudo install "$RUNNER_TEMP/tflint-bin/tflint" /usr/local/bin/tflint
-          ) || status=1
-
-          # Kyverno CLI: validate Kubernetes manifests and rendered Helm resources.
-          (
-            curl --fail --location --silent --show-error https://github.com/kyverno/kyverno/releases/download/v1.14.4/kyverno-cli_v1.14.4_linux_x86_64.tar.gz -o kyverno.tar.gz &&
-            mkdir -p "$RUNNER_TEMP/kyverno-bin" &&
-            tar -xzf kyverno.tar.gz -C "$RUNNER_TEMP/kyverno-bin" kyverno &&
-            sudo install "$RUNNER_TEMP/kyverno-bin/kyverno" /usr/local/bin/kyverno
-          ) || status=1
-
-          # Hadolint: lint Dockerfiles for secure and maintainable image builds.
-          (
-            curl --fail --location --silent --show-error https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint-Linux-x86_64 -o hadolint &&
-            chmod +x hadolint &&
-            sudo install hadolint /usr/local/bin/hadolint
-          ) || status=1
-
-          exit "$status"
-
-      - name: Iterate and scan each repository
+      - name: Scan repositories with ${{ matrix.tool }}
         id: scan
-        if: always()
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.ORGANIZATION_REPO_TOKEN }}
           GITHUB_ORG: ${{ vars.ORGANIZATION_NAME }}
-        run: bash scripts/scan-organization.sh repositories-to-scan scan-reports repository-names.txt
-
-      - name: Generate consolidated and per-repository reports
-        id: reports
-        if: always()
-        continue-on-error: true
-        run: python scripts/generate_consolidated_report.py --reports scan-reports --output consolidated-reports
-
-      - name: Normalize findings and enforce release gate
-        id: release-gate
-        if: always()
-        continue-on-error: true
         run: |
-          python scripts/normalize_findings.py --input scan-reports --output normalized-findings.json --repository organization
-          python scripts/validate_security_controls.py --findings normalized-findings.json
+          bash scripts/scan-security-tool.sh \
+            "${{ matrix.tool }}" \
+            "installed-tools/${{ matrix.tool }}" \
+            repository-names.txt \
+            scan-reports
 
-      - name: Consolidate pipeline outcomes
+      - name: Publish ${{ matrix.tool }} scan result
         if: always()
-        env:
-          DOWNLOAD_OUTCOME: ${{ steps.download-input.outcome }}
-          TERRAFORM_OUTCOME: ${{ steps.terraform-install.outcome }}
-          INSTALL_OUTCOME: ${{ steps.scanner-install.outcome }}
-          SCAN_OUTCOME: ${{ steps.scan.outcome }}
-          REPORT_OUTCOME: ${{ steps.reports.outcome }}
-          GATE_OUTCOME: ${{ steps.release-gate.outcome }}
-        run: |
-          mkdir -p scan-reports consolidated-reports
-          {
-            echo "Organization DevSecOps scan outcome"
-            echo
-            if [[ -f discovery-status.txt ]]; then
-              cat discovery-status.txt
-            else
-              echo "repository_discovery=failure"
-            fi
-            echo "input_download=$DOWNLOAD_OUTCOME"
-            echo "terraform_install=$TERRAFORM_OUTCOME"
-            echo "scanner_install=$INSTALL_OUTCOME"
-            echo "repository_scan=$SCAN_OUTCOME"
-            echo "report_generation=$REPORT_OUTCOME"
-            echo "release_gate=$GATE_OUTCOME"
-          } | tee consolidated-reports/pipeline-status.txt
-
-      - name: Upload readable reports
-        id: upload-reports
-        if: always()
-        continue-on-error: true
         uses: actions/upload-artifact@v7
         with:
-          name: organization-devsecops-reports
-          path: |
-            scan-reports/
-            consolidated-reports/
-            normalized-findings.json
+          name: scan-result-${{ matrix.tool }}
+          path: scan-reports
           retention-days: 30
           if-no-files-found: error
 
-  ConsolidateAndNotify:
-    name: Stage 3 - Consolidate, email, and gate
-    needs: ScanRepositories
+  Report:
+    name: Report / Consolidate results
+    needs:
+      - Install
+      - Scan
     if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Checkout commit
         uses: actions/checkout@v5
 
-      - name: Download scan reports
-        id: download-reports
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install reporting dependencies
+        run: |
+          python -m pip install --disable-pip-version-check \
+            PyYAML==6.0.2 jsonschema==4.23.0
+
+      - name: Download installation results
+        if: always()
         continue-on-error: true
         uses: actions/download-artifact@v8
         with:
-          name: organization-devsecops-reports
+          pattern: install-status-*
+          path: install-status
+          merge-multiple: true
+
+      - name: Download scan results
+        if: always()
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          pattern: scan-result-*
+          path: scan-reports
+          merge-multiple: true
+
+      - name: Generate consolidated report
+        id: report
+        continue-on-error: true
+        run: |
+          python scripts/generate_consolidated_report.py \
+            --reports scan-reports \
+            --output consolidated-reports
+
+      - name: Record pipeline results
+        if: always()
+        env:
+          INSTALL_RESULT: ${{ needs.Install.result }}
+          SCAN_RESULT: ${{ needs.Scan.result }}
+          REPORT_RESULT: ${{ steps.report.outcome }}
+        run: |
+          mkdir -p consolidated-reports install-status scan-reports
+          {
+            echo "Organization DevSecOps pipeline status"
+            echo
+            echo "install_stage=$INSTALL_RESULT"
+            find install-status -type f -name '*.txt' -exec cat {} \; | sort
+            echo "scan_stage=$SCAN_RESULT"
+            echo "report_stage=$REPORT_RESULT"
+          } | tee consolidated-reports/pipeline-status.txt
+
+      - name: Publish consolidated report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: consolidated-security-report
+          path: |
+            consolidated-reports
+            scan-reports
+            install-status
+          retention-days: 30
+
+  Mail:
+    name: Mail / Send report and apply final gate
+    needs: Report
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout commit
+        uses: actions/checkout@v5
+
+      - name: Download consolidated report
+        id: download
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          name: consolidated-security-report
           path: .
 
-      - name: Prepare consolidated status
-        if: always()
-        run: |
-          mkdir -p scan-reports consolidated-reports
-          if [[ ! -f consolidated-reports/pipeline-status.txt ]]; then
-            printf 'scan_report_artifact=failure\n' > consolidated-reports/pipeline-status.txt
-          fi
-          if [[ ! -f normalized-findings.json ]]; then
-            printf '{"repository":"organization","findings":[]}\n' > normalized-findings.json
-          fi
-
-      - name: Package reports for email
+      - name: Prepare email attachment
         id: package
         if: always()
         continue-on-error: true
         run: |
+          mkdir -p consolidated-reports scan-reports install-status
+          if [[ ! -f consolidated-reports/pipeline-status.txt ]]; then
+            printf 'report_stage=failure\n' >consolidated-reports/pipeline-status.txt
+          fi
           zip -qr organization-devsecops-reports.zip \
-            scan-reports consolidated-reports normalized-findings.json
+            consolidated-reports scan-reports install-status
 
-      - name: Email consolidated scan report
+      - name: Send consolidated report
         id: email
         if: always()
         continue-on-error: true
@@ -261,16 +257,19 @@ jobs:
       - name: Final pipeline gate
         if: always()
         env:
-          DOWNLOAD_OUTCOME: ${{ steps.download-reports.outcome }}
-          PACKAGE_OUTCOME: ${{ steps.package.outcome }}
-          EMAIL_OUTCOME: ${{ steps.email.outcome }}
+          REPORT_JOB_RESULT: ${{ needs.Report.result }}
+          DOWNLOAD_RESULT: ${{ steps.download.outcome }}
+          PACKAGE_RESULT: ${{ steps.package.outcome }}
+          EMAIL_RESULT: ${{ steps.email.outcome }}
         run: |
-          echo "artifact_download=$DOWNLOAD_OUTCOME" | tee -a consolidated-reports/pipeline-status.txt
-          echo "report_packaging=$PACKAGE_OUTCOME" | tee -a consolidated-reports/pipeline-status.txt
-          echo "email_delivery=$EMAIL_OUTCOME" | tee -a consolidated-reports/pipeline-status.txt
+          {
+            echo "report_job=$REPORT_JOB_RESULT"
+            echo "report_download=$DOWNLOAD_RESULT"
+            echo "report_packaging=$PACKAGE_RESULT"
+            echo "email_delivery=$EMAIL_RESULT"
+          } | tee -a consolidated-reports/pipeline-status.txt
           cat consolidated-reports/pipeline-status.txt
-          if grep -Eq '=failure$|=cancelled$|=skipped$' consolidated-reports/pipeline-status.txt; then
-            echo "One or more stages failed. See the consolidated report above."
+          if grep -Eq '=failure$|=cancelled$|=skipped$' \
+            consolidated-reports/pipeline-status.txt; then
             exit 1
           fi
-

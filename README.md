@@ -43,10 +43,10 @@ generated reports are intentionally omitted from the tree.
 - `.github/workflows/syntax-and-format-check.yml` is the pull-request and push
   quality gate. It validates Python, YAML, and shell files, checks policy IDs,
   exceptions, ownership, and repository metadata, then runs Gitleaks and Checkov.
-- `.github/workflows/scan_all_repo_friday_schedule.yml` is the operational entry
-  point for scheduled organization scans and scans on `master`. It discovers the
-  target repositories, installs pinned tools, calls the scan/report scripts, and
-  publishes report artifacts before enforcing the severity gate.
+- `.github/workflows/scan_all_repo_friday_schedule.yml` is the manually triggered
+  organization scan entry point. Its Install and Scan matrix jobs run the seven
+  security tools in parallel, followed by Report and Mail jobs. Schedule and
+  commit/PR triggers remain commented out.
 - `scripts/get-repository-list.sh` queries the configured GitHub organization,
   applies `repository/scan-exceptions.txt`, and produces the repository list and
   missing-metadata inventory consumed by the scheduled workflow.
@@ -54,6 +54,10 @@ generated reports are intentionally omitted from the tree.
   selected repository into a temporary workspace, chooses scanners based on the
   files found, uses rules from the tool directories, and writes per-repository
   results for downstream reporting.
+- `scripts/install-security-tool.sh` installs one matrix-selected scanner at the
+  version declared in `config/tool-versions.env`; its artifact is consumed by the
+  matching `scripts/scan-security-tool.sh` matrix job. The latter clones only the
+  approved repositories and writes per-tool status and log files.
 - `scripts/normalize_findings.py` converts scanner reports into the shared finding
   format expected by `scripts/validate_security_controls.py`.
 - `scripts/validate_security_controls.py` validates exception records against
@@ -76,9 +80,9 @@ generated reports are intentionally omitted from the tree.
   security classification used by governance checks.
 - `metadata/policy-metadata.schema.json` defines the common metadata contract for
   policy records across scanner directories.
-- `config/tool-versions.env` supplies approved Terraform, Checkov, and Gitleaks
-  versions to both workflows. `requirements-ci.txt` pins the Python validation and
-  scanning dependencies installed by organization scans.
+- `config/tool-versions.env` is the single source for approved Terraform and
+  scanner versions used by workflows and installer scripts. `requirements-ci.txt`
+  pins shared Python validation dependencies.
 - `helm_chart/Chart.yaml`, `helm_chart/values.yaml`, and `helm_chart/templates/`
   define the reusable AWS/EKS and Azure/AKS application chart; files under
   `helm_chart/examples/` provide environment-specific example values.

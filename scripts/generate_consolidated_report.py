@@ -17,6 +17,25 @@ SEVERITIES = ("critical", "high", "medium", "low", "info", "review")
 
 def read_reports(root: Path) -> dict[str, list[dict[str, str]]]:
     findings: dict[str, list[dict[str, str]]] = defaultdict(list)
+    # Parallel scanner jobs write one status file and log per tool/repository.
+    for status_file in root.glob("*/*.status"):
+        if status_file.read_text(encoding="utf-8").strip() == "0":
+            continue
+        repo = status_file.parent.name
+        scanner = status_file.stem
+        log = status_file.with_suffix(".log")
+        clone_log = status_file.parent / f"{scanner}-clone.log"
+        detail_file = log if log.exists() else clone_log
+        detail = (
+            detail_file.read_text(encoding="utf-8", errors="replace").strip()
+            if detail_file.exists()
+            else "Scanner failed without producing a log."
+        )
+        findings[repo].append(
+            {"scanner": scanner, "severity": "high", "detail": detail[:2000]}
+        )
+
+    # Retain compatibility with reports produced by the legacy orchestrator.
     for summary in root.glob("*/summary.json"):
         repo = summary.parent.name
         status = json.loads(summary.read_text(encoding="utf-8")).get("status", "1")
