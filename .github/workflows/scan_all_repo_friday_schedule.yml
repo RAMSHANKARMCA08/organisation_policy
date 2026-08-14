@@ -12,20 +12,9 @@ permissions:
   contents: read
 
 jobs:
-  Install:
-    name: Install / ${{ matrix.tool }}
+  Pipeline:
+    name: Install, discover, scan, report, and mail
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        tool:
-          - checkov
-          - trivy
-          - semgrep
-          - gitleaks
-          - tflint
-          - kyverno
-          - terrascan
     steps:
       - name: Checkout commit
         uses: actions/checkout@v5
@@ -35,201 +24,104 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install ${{ matrix.tool }}
-        id: install
-        continue-on-error: true
-        run: |
-          mkdir -p install-status
-          set -o pipefail
-          bash scripts/install-security-tool.sh \
-            "${{ matrix.tool }}" \
-            config/tool-versions.env \
-            "installed-tools/${{ matrix.tool }}" \
-            2>&1 | tee "install-status/${{ matrix.tool }}.log"
-
-      - name: Record installation result
-        if: always()
-        env:
-          INSTALL_OUTCOME: ${{ steps.install.outcome }}
-        run: |
-          mkdir -p install-status
-          printf 'install_%s=%s\n' \
-            "${{ matrix.tool }}" "$INSTALL_OUTCOME" \
-            >"install-status/${{ matrix.tool }}.txt"
-
-      - name: Publish installed tool
-        if: steps.install.outcome == 'success'
-        uses: actions/upload-artifact@v7
-        with:
-          name: installed-tool-${{ matrix.tool }}
-          path: installed-tools/${{ matrix.tool }}
-          retention-days: 1
-
-      - name: Publish installation result
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: install-status-${{ matrix.tool }}
-          path: install-status
-          retention-days: 7
-
-  DiscoverRepositories:
-    name: Discover repositories / Build dynamic matrix
-    runs-on: ubuntu-latest
-    outputs:
-      repositories: ${{ steps.matrix.outputs.repositories }}
-    steps:
-      - name: Checkout commit
-        uses: actions/checkout@v5
-
-      - name: Select repositories from the approved inventory
-        id: discover
-        continue-on-error: true
+      - name: Install tools and discover repositories in parallel
         env:
           GH_TOKEN: ${{ secrets.ORGANIZATION_REPO_TOKEN }}
           GITHUB_ORG: ${{ vars.ORGANIZATION_NAME }}
         run: |
-          bash scripts/get-repository-list.sh \
-            repository-names.txt \
-            repository/exceptions \
-            repository/discovered-repositories.yaml
+          set -uo pipefail
+          mkdir -p installed-tools install-status repository
+          tools=(checkov trivy semgrep gitleaks tflint kyverno terrascan)
+          printf '%s\n' "${tools[@]}" >tool-names.txt
 
-      - name: Build repository matrix
-        id: matrix
-        if: always()
-        env:
-          DISCOVERY_RESULT: ${{ steps.discover.outcome }}
-        run: |
-          touch repository-names.txt repository/discovered-repositories.yaml
-          repositories="$(jq -R -s -c \
-            'split("\n") | map(select(length > 0))' \
-            repository-names.txt)"
-          echo "repositories=$repositories" >>"$GITHUB_OUTPUT"
-          printf 'repository_discovery=%s\n' "$DISCOVERY_RESULT" \
-            >repository-discovery-status.txt
-          echo "Dynamic repository matrix: $repositories"
+          for tool in "${tools[@]}"; do
+            (
+              set -o pipefail
+              if bash scripts/install-security-tool.sh \
+                "$tool" config/tool-versions.env "installed-tools/$tool" \
+                2>&1 | tee "install-status/$tool.log"; then
+                printf 'install_%s=success\n' "$tool" \
+                  >"install-status/$tool.txt"
+              else
+                printf 'install_%s=failure\n' "$tool" \
+                  >"install-status/$tool.txt"
+              fi
+            ) &
+          done
 
-      - name: Publish repository matrix
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: repository-scan-input
-          path: |
-            repository-names.txt
-            repository/discovered-repositories.yaml
-            repository-discovery-status.txt
-          retention-days: 7
+          (
+            if bash scripts/get-repository-list.sh \
+              repository-names.txt \
+              repository/exceptions \
+              repository/discovered-repositories.yaml; then
+              echo 'repository_discovery=success' \
+                >repository-discovery-status.txt
+            else
+              touch repository-names.txt repository/discovered-repositories.yaml
+              echo 'repository_discovery=failure' \
+                >repository-discovery-status.txt
+            fi
+          ) &
 
-  Scan:
-    name: Scan / ${{ matrix.repository }} / ${{ matrix.tool }}
-    needs:
-      - Install
-      - DiscoverRepositories
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        tool:
-          - checkov
-          - trivy
-          - semgrep
-          - gitleaks
-          - tflint
-          - kyverno
-          - terrascan
-        repository: ${{ fromJson(needs.DiscoverRepositories.outputs.repositories) }}
-    steps:
-      - name: Checkout commit
-        uses: actions/checkout@v5
+          wait
+          echo 'Installation results:'
+          find install-status -type f -name '*.txt' -exec cat {} \; | sort
+          echo
+          echo 'Dynamic repository matrix:'
+          if [[ -s repository-names.txt ]]; then
+            cat repository-names.txt
+          else
+            echo '(none)'
+          fi
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.12'
-
-      - name: Download installed ${{ matrix.tool }}
-        continue-on-error: true
-        uses: actions/download-artifact@v8
-        with:
-          name: installed-tool-${{ matrix.tool }}
-          path: installed-tools/${{ matrix.tool }}
-
-      - name: Select ${{ matrix.repository }} for this matrix job
-        run: |
-          printf '%s\n' "${{ matrix.repository }}" >repository-names.txt
-
-      - name: Scan ${{ matrix.repository }} with ${{ matrix.tool }}
-        id: scan
-        continue-on-error: true
+      - name: Scan repository and tool combinations in parallel
         env:
           GH_TOKEN: ${{ secrets.ORGANIZATION_REPO_TOKEN }}
           GITHUB_ORG: ${{ vars.ORGANIZATION_NAME }}
         run: |
-          bash scripts/scan-security-tool.sh \
-            "${{ matrix.tool }}" \
-            "installed-tools/${{ matrix.tool }}" \
-            repository-names.txt \
-            scan-reports
+          set -uo pipefail
+          mkdir -p scan-reports
+          : >scan-combinations.txt
+          while IFS= read -r repository; do
+            [[ -z "$repository" ]] && continue
+            while IFS= read -r tool; do
+              [[ -z "$tool" ]] && continue
+              printf '%s\t%s\n' "$tool" "$repository" \
+                >>scan-combinations.txt
+            done <tool-names.txt
+          done <repository-names.txt
 
-      - name: Publish ${{ matrix.repository }} / ${{ matrix.tool }} result
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: scan-result-${{ matrix.repository }}-${{ matrix.tool }}
-          path: scan-reports
-          retention-days: 30
-          if-no-files-found: error
-
-  ReportAndMail:
-    name: Report and Mail / Consolidate and notify
-    needs:
-      - Install
-      - DiscoverRepositories
-      - Scan
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout commit
-        uses: actions/checkout@v5
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.12'
+          parallelism="$(nproc)"
+          echo "Running up to $parallelism scans in parallel."
+          set +e
+          xargs -r -P "$parallelism" -n 2 bash -c '
+            tool="$1"
+            repository="$2"
+            repository_file="$(mktemp)"
+            printf "%s\n" "$repository" >"$repository_file"
+            echo "::group::Scan / $repository / $tool"
+            bash scripts/scan-security-tool.sh \
+              "$tool" "installed-tools/$tool" \
+              "$repository_file" scan-reports
+            result=$?
+            echo "::endgroup::"
+            rm -f "$repository_file"
+            exit "$result"
+          ' _ <scan-combinations.txt
+          scan_exit=$?
+          set -e
+          if ((scan_exit == 0)); then
+            echo 'scan_execution=success' >scan-execution-status.txt
+          else
+            echo 'scan_execution=failure' >scan-execution-status.txt
+          fi
 
       - name: Install reporting dependencies
         run: |
           python -m pip install --disable-pip-version-check \
             PyYAML==6.0.2 jsonschema==4.23.0
 
-      - name: Download installation results
-        if: always()
-        continue-on-error: true
-        uses: actions/download-artifact@v8
-        with:
-          pattern: install-status-*
-          path: install-status
-          merge-multiple: true
-
-      - name: Download scan results
-        if: always()
-        continue-on-error: true
-        uses: actions/download-artifact@v8
-        with:
-          pattern: scan-result-*
-          path: scan-reports
-          merge-multiple: true
-
-      - name: Download repository discovery result
-        if: always()
-        continue-on-error: true
-        uses: actions/download-artifact@v8
-        with:
-          name: repository-scan-input
-          path: repository-scan-input
-
       - name: Generate consolidated report
-        id: report
         run: |
           set +e
           python scripts/generate_consolidated_report.py \
@@ -239,41 +131,43 @@ jobs:
           set -e
           if [[ -f consolidated-reports/organization-consolidated.html && \
                 -f consolidated-reports/organization-consolidated.md ]]; then
-            echo 'report_generation=success' >consolidated-reports/report-status.txt
+            echo 'report_generation=success' \
+              >consolidated-reports/report-status.txt
           else
-            echo 'report_generation=failure' >consolidated-reports/report-status.txt
+            echo 'report_generation=failure' \
+              >consolidated-reports/report-status.txt
           fi
           if ((report_exit == 0)); then
-            echo 'security_gate=success' >>consolidated-reports/report-status.txt
+            echo 'security_gate=success' \
+              >>consolidated-reports/report-status.txt
           else
-            echo 'security_gate=failure' >>consolidated-reports/report-status.txt
+            echo 'security_gate=failure' \
+              >>consolidated-reports/report-status.txt
           fi
 
       - name: Record pipeline results
         if: always()
-        env:
-          INSTALL_RESULT: ${{ needs.Install.result }}
-          DISCOVERY_RESULT: ${{ needs.DiscoverRepositories.result }}
-          SCAN_RESULT: ${{ needs.Scan.result }}
         run: |
           mkdir -p consolidated-reports install-status scan-reports
           {
-            echo "Organization DevSecOps pipeline status"
+            echo 'Organization DevSecOps pipeline status'
             echo
-            echo "install_stage=$INSTALL_RESULT"
             find install-status -type f -name '*.txt' -exec cat {} \; | sort
-            echo "discovery_stage=$DISCOVERY_RESULT"
-            if [[ -f repository-scan-input/repository-discovery-status.txt ]]; then
-              cat repository-scan-input/repository-discovery-status.txt
+            if [[ -f repository-discovery-status.txt ]]; then
+              cat repository-discovery-status.txt
             else
-              echo "repository_discovery=failure"
+              echo 'repository_discovery=failure'
             fi
-            echo "scan_stage=$SCAN_RESULT"
+            if [[ -f scan-execution-status.txt ]]; then
+              cat scan-execution-status.txt
+            else
+              echo 'scan_execution=failure'
+            fi
             if [[ -f consolidated-reports/report-status.txt ]]; then
               cat consolidated-reports/report-status.txt
             else
-              echo "report_generation=failure"
-              echo "security_gate=failure"
+              echo 'report_generation=failure'
+              echo 'security_gate=failure'
             fi
           } | tee consolidated-reports/pipeline-status.txt
 
@@ -283,11 +177,8 @@ jobs:
         continue-on-error: true
         run: |
           mkdir -p consolidated-reports scan-reports install-status
-          if [[ ! -f consolidated-reports/pipeline-status.txt ]]; then
-            printf 'report_stage=failure\n' >consolidated-reports/pipeline-status.txt
-          fi
           zip -qr organization-devsecops-reports.zip \
-            consolidated-reports scan-reports install-status repository-scan-input
+            consolidated-reports scan-reports install-status repository
 
       - name: Send consolidated report
         id: email
@@ -335,6 +226,6 @@ jobs:
             consolidated-reports
             scan-reports
             install-status
-            repository-scan-input
+            repository/discovered-repositories.yaml
             organization-devsecops-reports.zip
           retention-days: 30
