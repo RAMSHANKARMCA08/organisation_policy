@@ -21,8 +21,8 @@ def main() -> int:
     parser.add_argument("--html-file", type=Path)
     args = parser.parse_args()
 
-    username = os.environ.get("GMAIL_USERNAME")
-    app_password = os.environ.get("GMAIL_APP_PASSWORD")
+    username = os.environ.get("MAIL_USERNAME")
+    app_password = os.environ.get("MAIL_APP_PASSWORD")
     oauth2_token = os.environ.get("SMTP_OAUTH2_TOKEN")
     smtp_server = os.environ.get("SMTP_SERVER")
     smtp_port_text = os.environ.get("SMTP_PORT")
@@ -30,7 +30,7 @@ def main() -> int:
     missing = [
         name
         for name, value in (
-            ("GMAIL_USERNAME", username),
+            ("MAIL_USERNAME", username),
             ("SMTP_SERVER", smtp_server),
             ("SMTP_PORT", smtp_port_text),
             ("SMTP_SECURITY", smtp_security),
@@ -45,7 +45,7 @@ def main() -> int:
         return 2
     if not oauth2_token and not app_password:
         print(
-            "Configure SMTP_OAUTH2_TOKEN (preferred) or GMAIL_APP_PASSWORD",
+            "Configure SMTP_OAUTH2_TOKEN (preferred) or MAIL_APP_PASSWORD",
             file=sys.stderr,
         )
         return 2

@@ -72,12 +72,12 @@ generated reports are intentionally omitted from the tree.
   demonstrates the generated output.
 - `scripts/generate_policy_index.py` rebuilds `POLICY_INDEX.md` from policy files;
   run it when policy metadata or rules change.
-- `scripts/send_email_report.py` sends the packaged scan reports through Gmail
+- `scripts/send_email_report.py` sends the packaged scan reports through SMTP
   SMTP as a rich HTML summary with colored tables and a severity pie chart, with
   a plain-text fallback and ZIP attachment. The workflow uses the
-  `GMAIL_USERNAME` Actions variable as both sender and recipient, and reads the
+  `MAIL_USERNAME` Actions variable as both sender and recipient, and reads the
   authentication from Actions secrets. `SMTP_OAUTH2_TOKEN` is preferred when
-  configured; `GMAIL_APP_PASSWORD` is the fallback for SMTP clients without
+  configured; `MAIL_APP_PASSWORD` is the fallback for SMTP clients without
   OAuth. The required `SMTP_SERVER`, `SMTP_PORT`, and `SMTP_SECURITY` Actions
   variables configure delivery. Set `SMTP_SECURITY` to `ssl` or `starttls`.
 - `repository/classification.schema.json` defines repository inventory fields,
