@@ -48,7 +48,8 @@ generated reports are intentionally omitted from the tree.
   organization scan entry point. One `ubuntu-latest` runner executes four ordered
   stages: parallel tool/reporting installation, repository identification,
   parallel repository/tool scanning, and consolidated reporting with email.
-  Schedule and commit/PR triggers remain commented out.
+  Findings and operational errors are recorded as warnings without failing the
+  workflow. Schedule and commit/PR triggers remain commented out.
 - `scripts/get-repository-list.sh` queries the configured GitHub organization,
   applies entries from `repository/exceptions/`, and produces the repository list and
   missing-metadata inventory consumed by the scheduled workflow.

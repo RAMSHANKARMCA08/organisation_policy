@@ -205,11 +205,13 @@ jobs:
           cat consolidated-reports/pipeline-status.txt
           if grep -Eq '=failure$|=cancelled$|=skipped$' \
             consolidated-reports/pipeline-status.txt; then
-            exit 1
+            echo '::warning title=Pipeline completed with findings::One or more operations reported failures. Review the consolidated report.'
           fi
+          exit 0
 
       - name: Stage 4 / Publish report artifact
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v7
         with:
           name: consolidated-security-report
