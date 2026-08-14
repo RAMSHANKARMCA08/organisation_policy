@@ -20,12 +20,12 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Load approved tool versions
-        run: cat config/tool-versions.env >> "$GITHUB_ENV"
+        run: grep -E '^[A-Za-z_][A-Za-z0-9_]*=.*$' config/tool-versions.env >> "$GITHUB_ENV"
 
       - name: Get, filter, and print repository names
         env:
           GH_TOKEN: ${{ secrets.ORGANIZATION_REPO_TOKEN }}
-          GITHUB_ORG: ${{ vars.GITHUB_ORGANIZATION }}
+          GITHUB_ORG: ${{ vars.ORGANIZATION_NAME }}
         run: bash scripts/get-repository-list.sh repository-names.txt repository/scan-exceptions.txt repository/discovered-repositories.yaml
 
       - name: Publish reusable repository list
@@ -51,7 +51,7 @@ jobs:
           path: .
 
       - name: Load approved tool versions
-        run: cat config/tool-versions.env >> "$GITHUB_ENV"
+        run: grep -E '^[A-Za-z_][A-Za-z0-9_]*=.*$' config/tool-versions.env >> "$GITHUB_ENV"
 
       - name: Install scanners
         uses: hashicorp/setup-terraform@v3
@@ -109,8 +109,7 @@ jobs:
       - name: Iterate and scan each repository
         env:
           GH_TOKEN: ${{ secrets.ORGANIZATION_REPO_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.ORGANIZATION_REPO_TOKEN }}
-          GITHUB_ORG: ${{ vars.GITHUB_ORGANIZATION }}
+          GITHUB_ORG: ${{ vars.ORGANIZATION_NAME }}
         run: bash scripts/scan-organization.sh repositories-to-scan scan-reports repository-names.txt
 
       - name: Generate consolidated and per-repository reports
@@ -132,4 +131,18 @@ jobs:
         run: |
           python scripts/normalize_findings.py --input scan-reports --output normalized-findings.json --repository organization
           python scripts/validate_security_controls.py --findings normalized-findings.json
+
+      - name: Package reports for email
+        if: always()
+        run: zip -qr organization-devsecops-reports.zip scan-reports consolidated-reports
+
+      - name: Email reports
+        if: always()
+        env:
+          GMAIL_USERNAME: ${{ secrets.GMAIL_USERNAME }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: |
+          python scripts/send_email_report.py \
+            --attachment organization-devsecops-reports.zip \
+            --recipient ramshankar.mca08@gmail.com
 

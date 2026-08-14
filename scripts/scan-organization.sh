@@ -3,7 +3,7 @@ set -Eeuo pipefail
 
 # Required organization context and output locations.
 : "${GITHUB_ORG:?Set GITHUB_ORG}"
-: "${GITHUB_TOKEN:?Set GITHUB_TOKEN}"
+: "${GH_TOKEN:?Set GH_TOKEN}"
 
 ROOT="${1:-repositories-to-scan}"
 REPORT="${2:-scan-reports}"
