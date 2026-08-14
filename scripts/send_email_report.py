@@ -17,6 +17,7 @@ def main() -> int:
     parser.add_argument("--recipient", required=True)
     parser.add_argument("--subject", default="Organization DevSecOps scan report")
     parser.add_argument("--body-file", type=Path)
+    parser.add_argument("--html-file", type=Path)
     args = parser.parse_args()
 
     username = os.environ.get("GMAIL_USERNAME")
@@ -35,6 +36,9 @@ def main() -> int:
             file=sys.stderr,
         )
         return 2
+    # Google displays app passwords in groups; remove copied whitespace before
+    # authenticating while keeping the secret out of logs.
+    app_password = "".join(app_password.split())
     if not args.attachment.is_file():
         print(f"Report attachment not found: {args.attachment}", file=sys.stderr)
         return 2
@@ -50,6 +54,13 @@ def main() -> int:
             return 2
         body = args.body_file.read_text(encoding="utf-8")
     message.set_content(body)
+    if args.html_file:
+        if not args.html_file.is_file():
+            print(f"HTML email file not found: {args.html_file}", file=sys.stderr)
+            return 2
+        message.add_alternative(
+            args.html_file.read_text(encoding="utf-8"), subtype="html"
+        )
     message.add_attachment(
         args.attachment.read_bytes(),
         maintype="application",
@@ -57,9 +68,20 @@ def main() -> int:
         filename=args.attachment.name,
     )
 
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=30) as smtp:
-        smtp.login(username, app_password)
-        smtp.send_message(message)
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=30) as smtp:
+            smtp.login(username, app_password)
+            smtp.send_message(message)
+    except smtplib.SMTPAuthenticationError:
+        print(
+            "Gmail rejected GMAIL_APP_PASSWORD. Generate a new app password "
+            "for the configured account and update the GitHub Actions secret.",
+            file=sys.stderr,
+        )
+        return 3
+    except smtplib.SMTPException as error:
+        print(f"Gmail SMTP delivery failed: {error}", file=sys.stderr)
+        return 4
 
     print(f"Report sent to {args.recipient}")
     return 0

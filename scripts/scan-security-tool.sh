@@ -29,6 +29,8 @@ scan_repository() {
   if ! gh repo clone "$GITHUB_ORG/$repo" "$target" -- --depth 1 \
     >"$output/${TOOL}-clone.log" 2>&1; then
     printf '1\n' >"$output/${TOOL}.status"
+    echo "::warning title=${TOOL} clone failed::Unable to clone ${GITHUB_ORG}/${repo}. See the scan artifact for details."
+    sed -n '1,40p' "$output/${TOOL}-clone.log"
     return 1
   fi
 
@@ -74,6 +76,10 @@ scan_repository() {
   esac
 
   printf '%s\n' "$result" >"$output/${TOOL}.status"
+  if ((result != 0)); then
+    echo "::warning title=${TOOL} finding::${repo} reported scanner findings. Final enforcement is deferred to ReportAndMail."
+    sed -n '1,80p' "$output/${TOOL}.log"
+  fi
   return "$result"
 }
 
@@ -91,4 +97,6 @@ done <"$REPOSITORY_LIST"
 printf '{"tool":"%s","failed_repositories":%d}\n' \
   "$TOOL" "$failures" >"$REPORT_ROOT/${TOOL}-summary.json"
 
-exit "$((failures > 0 ? 1 : 0))"
+echo "$TOOL scan completed with $failures repository failure(s)."
+# Per-repository status files are consolidated and enforced in ReportAndMail.
+exit 0

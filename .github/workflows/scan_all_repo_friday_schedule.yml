@@ -224,7 +224,8 @@ jobs:
             --attachment organization-devsecops-reports.zip \
             --recipient ramshankar.mca08@gmail.com \
             --subject "Organization DevSecOps scan report" \
-            --body-file consolidated-reports/pipeline-status.txt
+            --body-file consolidated-reports/pipeline-status.txt \
+            --html-file consolidated-reports/organization-consolidated.html
 
       - name: Final pipeline gate
         if: always()

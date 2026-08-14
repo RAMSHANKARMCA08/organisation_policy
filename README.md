@@ -73,8 +73,9 @@ generated reports are intentionally omitted from the tree.
 - `scripts/generate_policy_index.py` rebuilds `POLICY_INDEX.md` from policy files;
   run it when policy metadata or rules change.
 - `scripts/send_email_report.py` sends the packaged scan reports through Gmail
-  SMTP. The scan workflow uses the configured Gmail address and reads its app
-  password from the `GMAIL_APP_PASSWORD` GitHub Actions secret.
+  SMTP as a rich HTML summary with colored tables and a severity pie chart, with
+  a plain-text fallback and ZIP attachment. The workflow reads the app password
+  from the `GMAIL_APP_PASSWORD` GitHub Actions secret.
 - `repository/classification.schema.json` defines repository inventory fields,
   while the other YAML files in `repository/` record repository ownership and
   security classification used by governance checks.

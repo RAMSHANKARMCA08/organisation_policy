@@ -263,8 +263,15 @@ def main() -> int:
         or '<tr><td colspan="3">No findings.</td></tr>'
     )
     document = (
-        f"<html><body><h1>Organization DevSecOps report</h1><p>Generated {html.escape(datetime.now(timezone.utc).isoformat())}</p><h2>Severity distribution</h2><div style='width:220px;height:220px;border-radius:50%;background:conic-gradient({gradient})'></div><ul>"
-        + "".join(f"<li>{s}: {severity_counts[s]}</li>" for s in SEVERITIES)
+        "<html><head><style>body{font-family:Arial,sans-serif;color:#1f2937}"
+        "h1{color:#1d4ed8}table{border-collapse:collapse;width:100%;margin-bottom:24px}"
+        "th{background:#1d4ed8;color:white;text-align:left}th,td{border:1px solid #cbd5e1;padding:8px}"
+        "tr:nth-child(even){background:#f1f5f9}</style></head><body>"
+        f"<h1>Organization DevSecOps report</h1><p>Generated {html.escape(datetime.now(timezone.utc).isoformat())}</p><h2>Severity distribution</h2><div style='width:220px;height:220px;border-radius:50%;background:conic-gradient({gradient})'></div><ul style='list-style:none;padding:0'>"
+        + "".join(
+            f"<li><span style='display:inline-block;width:12px;height:12px;background:{colors[s]};margin-right:8px'></span><b>{s.title()}</b>: {severity_counts[s]}</li>"
+            for s in SEVERITIES
+        )
         + f"</ul><h2>Critical and high findings by repository</h2><table border='1' cellpadding='6'><tr><th>Repository</th><th>Critical</th><th>High</th></tr>{repo_html}</table><h2>Exceptions expiring in the next 30 days</h2><table border='1' cellpadding='6'><tr><th>Repository</th><th>Policy ID</th><th>Reason</th><th>Valid till</th><th>Days remaining</th></tr>{expiry_html}</table><h2>Findings</h2><table border='1' cellpadding='6'><tr><th>Repository</th><th>Scanner</th><th>Priority</th><th>Details</th></tr>{html_rows or '<tr><td colspan=4>All scanned repositories passed.</td></tr>'}</table></body></html>"
     )
     (args.output / "organization-consolidated.html").write_text(
