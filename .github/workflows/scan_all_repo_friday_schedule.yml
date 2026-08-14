@@ -217,12 +217,15 @@ jobs:
         if: always()
         continue-on-error: true
         env:
-          GMAIL_USERNAME: ramshankar.mca08@gmail.com
+          GMAIL_USERNAME: ${{ vars.GMAIL_USERNAME }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          SMTP_OAUTH2_TOKEN: ${{ secrets.SMTP_OAUTH2_TOKEN }}
+          SMTP_SERVER: ${{ vars.SMTP_SERVER || 'smtp.gmail.com' }}
+          SMTP_PORT: ${{ vars.SMTP_PORT || '465' }}
         run: |
           python scripts/send_email_report.py \
             --attachment organization-devsecops-reports.zip \
-            --recipient ramshankar.mca08@gmail.com \
+            --recipient "${{ vars.GMAIL_USERNAME }}" \
             --subject "Organization DevSecOps scan report" \
             --body-file consolidated-reports/pipeline-status.txt \
             --html-file consolidated-reports/organization-consolidated.html

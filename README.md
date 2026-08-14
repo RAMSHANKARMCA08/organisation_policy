@@ -74,8 +74,13 @@ generated reports are intentionally omitted from the tree.
   run it when policy metadata or rules change.
 - `scripts/send_email_report.py` sends the packaged scan reports through Gmail
   SMTP as a rich HTML summary with colored tables and a severity pie chart, with
-  a plain-text fallback and ZIP attachment. The workflow reads the app password
-  from the `GMAIL_APP_PASSWORD` GitHub Actions secret.
+  a plain-text fallback and ZIP attachment. The workflow uses the
+  `GMAIL_USERNAME` Actions variable as both sender and recipient, and reads the
+  authentication from Actions secrets. `SMTP_OAUTH2_TOKEN` is preferred when
+  configured; `GMAIL_APP_PASSWORD` is the fallback for SMTP clients without
+  OAuth. `SMTP_SERVER` and `SMTP_PORT` Actions variables configure delivery;
+  defaults are `smtp.gmail.com` and `465`. Port `465` uses SSL/TLS and `587`
+  uses STARTTLS.
 - `repository/classification.schema.json` defines repository inventory fields,
   while the other YAML files in `repository/` record repository ownership and
   security classification used by governance checks.

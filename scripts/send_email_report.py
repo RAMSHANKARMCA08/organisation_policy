@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import os
 import smtplib
 import sys
@@ -22,23 +23,44 @@ def main() -> int:
 
     username = os.environ.get("GMAIL_USERNAME")
     app_password = os.environ.get("GMAIL_APP_PASSWORD")
-    missing = [
-        name
-        for name, value in (
-            ("GMAIL_USERNAME", username),
-            ("GMAIL_APP_PASSWORD", app_password),
-        )
-        if not value
-    ]
+    oauth2_token = os.environ.get("SMTP_OAUTH2_TOKEN")
+    smtp_server = os.environ.get("SMTP_SERVER", "smtp.gmail.com").strip()
+    smtp_port_text = os.environ.get("SMTP_PORT", "465").strip()
+    missing = [name for name, value in (("GMAIL_USERNAME", username),) if not value]
     if missing:
         print(
             f"Missing required environment variable(s): {', '.join(missing)}",
             file=sys.stderr,
         )
         return 2
-    # Google displays app passwords in groups; remove copied whitespace before
-    # authenticating while keeping the secret out of logs.
-    app_password = "".join(app_password.split())
+    if not oauth2_token and not app_password:
+        print(
+            "Configure SMTP_OAUTH2_TOKEN (preferred) or GMAIL_APP_PASSWORD",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        smtp_port = int(smtp_port_text)
+    except ValueError:
+        print("SMTP_PORT must be 465 or 587", file=sys.stderr)
+        return 2
+    if smtp_port not in (465, 587):
+        print("SMTP_PORT must be 465 (SSL/TLS) or 587 (STARTTLS)", file=sys.stderr)
+        return 2
+    if app_password:
+        # Google displays app passwords in groups; remove copied whitespace.
+        app_password = "".join(app_password.split())
+
+    def authenticate(smtp: smtplib.SMTP) -> None:
+        if oauth2_token:
+            auth = f"user={username}\x01auth=Bearer {oauth2_token}\x01\x01"
+            encoded = base64.b64encode(auth.encode()).decode("ascii")
+            code, response = smtp.docmd("AUTH", f"XOAUTH2 {encoded}")
+            if code != 235:
+                raise smtplib.SMTPAuthenticationError(code, response)
+        else:
+            smtp.login(username, app_password)
+
     if not args.attachment.is_file():
         print(f"Report attachment not found: {args.attachment}", file=sys.stderr)
         return 2
@@ -69,18 +91,31 @@ def main() -> int:
     )
 
     try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=30) as smtp:
-            smtp.login(username, app_password)
-            smtp.send_message(message)
+        if smtp_port == 465:
+            with smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=30) as smtp:
+                authenticate(smtp)
+                smtp.send_message(message)
+        else:
+            with smtplib.SMTP(smtp_server, smtp_port, timeout=30) as smtp:
+                smtp.ehlo()
+                smtp.starttls()
+                smtp.ehlo()
+                authenticate(smtp)
+                smtp.send_message(message)
     except smtplib.SMTPAuthenticationError:
         print(
-            "Gmail rejected GMAIL_APP_PASSWORD. Generate a new app password "
-            "for the configured account and update the GitHub Actions secret.",
+            "The SMTP server rejected the OAuth token or app password. Update "
+            "the configured Actions authentication secret.",
             file=sys.stderr,
         )
         return 3
     except smtplib.SMTPException as error:
-        print(f"Gmail SMTP delivery failed: {error}", file=sys.stderr)
+        print(f"SMTP delivery failed: {error}", file=sys.stderr)
+        return 4
+    except OSError as error:
+        print(
+            f"Unable to connect to {smtp_server}:{smtp_port}: {error}", file=sys.stderr
+        )
         return 4
 
     print(f"Report sent to {args.recipient}")
