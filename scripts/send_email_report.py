@@ -107,17 +107,23 @@ def main() -> int:
         filename=args.attachment.name,
     )
 
+    smtp_phase = "connection"
     try:
         if smtp_security == "ssl":
             with smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=30) as smtp:
+                smtp_phase = "authentication"
                 authenticate(smtp)
+                smtp_phase = "message delivery"
                 smtp.send_message(message)
         else:
             with smtplib.SMTP(smtp_server, smtp_port, timeout=30) as smtp:
                 smtp.ehlo()
+                smtp_phase = "STARTTLS negotiation"
                 smtp.starttls()
                 smtp.ehlo()
+                smtp_phase = "authentication"
                 authenticate(smtp)
+                smtp_phase = "message delivery"
                 smtp.send_message(message)
     except smtplib.SMTPAuthenticationError:
         auth_method = "OAuth 2.0" if oauth2_token else "App Password"
@@ -127,8 +133,14 @@ def main() -> int:
             file=sys.stderr,
         )
         return 3
+    except smtplib.SMTPServerDisconnected as error:
+        print(
+            f"SMTP server disconnected during {smtp_phase}: {error}",
+            file=sys.stderr,
+        )
+        return 4
     except smtplib.SMTPException as error:
-        print(f"SMTP delivery failed: {error}", file=sys.stderr)
+        print(f"SMTP failure during {smtp_phase}: {error}", file=sys.stderr)
         return 4
     except OSError as error:
         print(
