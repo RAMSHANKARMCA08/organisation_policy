@@ -21,5 +21,3 @@ class OrganizationCheck008(BaseResourceCheck):
 
 check = OrganizationCheck008()
 checkov_check = check
-
-

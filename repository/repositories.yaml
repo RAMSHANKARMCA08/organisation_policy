@@ -1,8 +1,0 @@
-# Add one entry per organization repository. This inventory is metadata only.
-# Do not put tokens, passwords, or other secrets here.
-repositories:
-  - name: example-repository
-    project: example-project
-    point_of_contact_1: owner1@example.com
-    point_of_contact_2: owner2@example.com
-
