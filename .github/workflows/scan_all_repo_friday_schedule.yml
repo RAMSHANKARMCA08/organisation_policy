@@ -73,9 +73,59 @@ jobs:
           path: install-status
           retention-days: 7
 
-  Scan:
-    name: Scan / ${{ matrix.tool }}
+  DiscoverRepositories:
+    name: Discover repositories / Build dynamic matrix
     needs: Install
+    runs-on: ubuntu-latest
+    outputs:
+      repositories: ${{ steps.matrix.outputs.repositories }}
+    steps:
+      - name: Checkout commit
+        uses: actions/checkout@v5
+
+      - name: Select repositories from the approved inventory
+        id: discover
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.ORGANIZATION_REPO_TOKEN }}
+          GITHUB_ORG: ${{ vars.ORGANIZATION_NAME }}
+        run: |
+          bash scripts/get-repository-list.sh \
+            repository-names.txt \
+            repository/scan-exceptions.txt \
+            repository/discovered-repositories.yaml
+
+      - name: Build repository matrix
+        id: matrix
+        if: always()
+        env:
+          DISCOVERY_RESULT: ${{ steps.discover.outcome }}
+        run: |
+          touch repository-names.txt repository/discovered-repositories.yaml
+          repositories="$(jq -R -s -c \
+            'split("\n") | map(select(length > 0))' \
+            repository-names.txt)"
+          echo "repositories=$repositories" >>"$GITHUB_OUTPUT"
+          printf 'repository_discovery=%s\n' "$DISCOVERY_RESULT" \
+            >repository-discovery-status.txt
+          echo "Dynamic repository matrix: $repositories"
+
+      - name: Publish repository matrix
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: repository-scan-input
+          path: |
+            repository-names.txt
+            repository/discovered-repositories.yaml
+            repository-discovery-status.txt
+          retention-days: 7
+
+  Scan:
+    name: Scan / ${{ matrix.repository }} / ${{ matrix.tool }}
+    needs:
+      - Install
+      - DiscoverRepositories
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -88,6 +138,7 @@ jobs:
           - tflint
           - kyverno
           - terrascan
+        repository: ${{ fromJson(needs.DiscoverRepositories.outputs.repositories) }}
     steps:
       - name: Checkout commit
         uses: actions/checkout@v5
@@ -104,17 +155,11 @@ jobs:
           name: installed-tool-${{ matrix.tool }}
           path: installed-tools/${{ matrix.tool }}
 
-      - name: Select repositories from the approved inventory
-        env:
-          GH_TOKEN: ${{ secrets.ORGANIZATION_REPO_TOKEN }}
-          GITHUB_ORG: ${{ vars.ORGANIZATION_NAME }}
+      - name: Select ${{ matrix.repository }} for this matrix job
         run: |
-          bash scripts/get-repository-list.sh \
-            repository-names.txt \
-            repository/scan-exceptions.txt \
-            repository/discovered-repositories.yaml
+          printf '%s\n' "${{ matrix.repository }}" >repository-names.txt
 
-      - name: Scan repositories with ${{ matrix.tool }}
+      - name: Scan ${{ matrix.repository }} with ${{ matrix.tool }}
         id: scan
         continue-on-error: true
         env:
@@ -127,11 +172,11 @@ jobs:
             repository-names.txt \
             scan-reports
 
-      - name: Publish ${{ matrix.tool }} scan result
+      - name: Publish ${{ matrix.repository }} / ${{ matrix.tool }} result
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: scan-result-${{ matrix.tool }}
+          name: scan-result-${{ matrix.repository }}-${{ matrix.tool }}
           path: scan-reports
           retention-days: 30
           if-no-files-found: error
@@ -140,6 +185,7 @@ jobs:
     name: Report and Mail / Consolidate and notify
     needs:
       - Install
+      - DiscoverRepositories
       - Scan
     if: always()
     runs-on: ubuntu-latest
@@ -175,6 +221,14 @@ jobs:
           path: scan-reports
           merge-multiple: true
 
+      - name: Download repository discovery result
+        if: always()
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          name: repository-scan-input
+          path: repository-scan-input
+
       - name: Generate consolidated report
         id: report
         continue-on-error: true
@@ -187,6 +241,7 @@ jobs:
         if: always()
         env:
           INSTALL_RESULT: ${{ needs.Install.result }}
+          DISCOVERY_RESULT: ${{ needs.DiscoverRepositories.result }}
           SCAN_RESULT: ${{ needs.Scan.result }}
           REPORT_RESULT: ${{ steps.report.outcome }}
         run: |
@@ -196,6 +251,12 @@ jobs:
             echo
             echo "install_stage=$INSTALL_RESULT"
             find install-status -type f -name '*.txt' -exec cat {} \; | sort
+            echo "discovery_stage=$DISCOVERY_RESULT"
+            if [[ -f repository-scan-input/repository-discovery-status.txt ]]; then
+              cat repository-scan-input/repository-discovery-status.txt
+            else
+              echo "repository_discovery=failure"
+            fi
             echo "scan_stage=$SCAN_RESULT"
             echo "report_stage=$REPORT_RESULT"
           } | tee consolidated-reports/pipeline-status.txt
@@ -210,7 +271,7 @@ jobs:
             printf 'report_stage=failure\n' >consolidated-reports/pipeline-status.txt
           fi
           zip -qr organization-devsecops-reports.zip \
-            consolidated-reports scan-reports install-status
+            consolidated-reports scan-reports install-status repository-scan-input
 
       - name: Send consolidated report
         id: email
@@ -258,5 +319,6 @@ jobs:
             consolidated-reports
             scan-reports
             install-status
+            repository-scan-input
             organization-devsecops-reports.zip
           retention-days: 30

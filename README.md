@@ -44,8 +44,9 @@ generated reports are intentionally omitted from the tree.
   quality gate. It validates Python, YAML, and shell files, checks policy IDs,
   exceptions, ownership, and repository metadata, then runs Gitleaks and Checkov.
 - `.github/workflows/scan_all_repo_friday_schedule.yml` is the manually triggered
-  organization scan entry point. Its Install and Scan matrix jobs run the seven
-  security tools in parallel, followed by a combined Report and Mail job.
+  organization scan entry point. It installs the seven security tools in
+  parallel, discovers approved repositories dynamically, and runs a parallel
+  tool-by-repository Scan matrix before the combined Report and Mail job.
   Schedule and commit/PR triggers remain commented out.
 - `scripts/get-repository-list.sh` queries the configured GitHub organization,
   applies `repository/scan-exceptions.txt`, and produces the repository list and
